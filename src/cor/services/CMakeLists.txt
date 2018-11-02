@@ -1,0 +1,11 @@
+target_sources(
+    libcor
+    PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/consistency_object.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/controller.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/mailer.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/page_manager.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/remote_session.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/resource_manager.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/session_manager.cpp"
+)

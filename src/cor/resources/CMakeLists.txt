@@ -1,0 +1,8 @@
+target_sources(
+    libcor
+    PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/domain.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/group.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/mutex.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/resource.cpp"
+)
