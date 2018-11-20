@@ -14,16 +14,16 @@ ResourcePtr<T>::ResourcePtr(ResourceManager *rsc_mgr, idp_t idp) :
     _idp(idp)
 {
     // increment resource reference counter
-    //std::cout << "IncrementResourceReferenceCounter\n";
-    _rsc_mgr->IncrementResourceReferenceCounter(_idp);
+    if (_rsc_mgr != nullptr)
+        _rsc_mgr->IncrementResourceReferenceCounter(_idp);
 }
 
 template <typename T>
 ResourcePtr<T>::~ResourcePtr()
 {
     // decrement resource reference counter
-    //std::cout << "DecrementResourceReferenceCounter\n";
-    _rsc_mgr->DecrementResourceReferenceCounter(_idp);
+    if (_rsc_mgr != nullptr)
+        _rsc_mgr->DecrementResourceReferenceCounter(_idp);
 }
 
 template <typename T>
@@ -31,9 +31,8 @@ ResourcePtr<T>::ResourcePtr(ResourcePtr<T> const& other) noexcept :
     _rsc_mgr(other._rsc_mgr),
     _idp(other._idp)
 {
-    // increment resource reference counter
-    //std::cout << "IncrementResourceReferenceCounter\n";
-    _rsc_mgr->IncrementResourceReferenceCounter(_idp);
+    if (_rsc_mgr != nullptr)
+        _rsc_mgr->IncrementResourceReferenceCounter(_idp);
 }
 
 template <typename T>
@@ -44,9 +43,8 @@ ResourcePtr<T>::ResourcePtr(ResourcePtr<T>&& other) noexcept :
     _rsc_mgr(other._rsc_mgr),
     _idp(other._idp)
 {
-    // increment resource reference counter
-    //std::cout << "IncrementResourceReferenceCounter\n";
-    _rsc_mgr->IncrementResourceReferenceCounter(_idp);
+    if (_rsc_mgr != nullptr)    
+        _rsc_mgr->IncrementResourceReferenceCounter(_idp);
 }
 
 template <typename T>
@@ -55,12 +53,14 @@ ResourcePtr<T>& ResourcePtr<T>::operator=(ResourcePtr&& other) noexcept = defaul
 template <typename T>
 T* ResourcePtr<T>::operator->() const
 {
+    // protect against nullptr
     return dynamic_cast<T*>(_rsc_mgr->GetResource(_idp));
 }
 
 template <typename T>
 T& ResourcePtr<T>::operator*() const
 {
+    // protect against nullptr
     return *(dynamic_cast<T*>(_rsc_mgr->GetResource(_idp)));
 }
 

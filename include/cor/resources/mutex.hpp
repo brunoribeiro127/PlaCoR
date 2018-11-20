@@ -2,17 +2,16 @@
 #define COR_MUTEX_HPP
 
 #include "cor/resources/resource.hpp"
-#include "cor/services/resource_factory.hpp"
 #include "cor/elements/synchronizer.hpp"
 
 #include "cereal/types/polymorphic.hpp"
 
 namespace cor {
 
-class Mutex: public Resource, public ResourceFactory<Mutex>, public Synchronizer
+class Mutex: public Resource, public Synchronizer
 {
 
-friend class ResourceFactory<Mutex>;
+friend class ResourceManager;
 friend class cereal::access;
 
 public:

@@ -4,7 +4,6 @@
 #include <functional>
 
 #include "cor/resources/resource.hpp"
-#include "cor/services/resource_factory.hpp"
 #include "cor/elements/executor.hpp"
 #include "cor/elements/mailbox.hpp"
 
@@ -15,10 +14,10 @@ namespace cor {
 template <typename> class Agent;
 
 template <typename R, typename ... P>
-class Agent<R(P...)>: public Resource, public ResourceFactory<Agent<R(P...)>>, public Executor<R(P...)>, public Mailbox
+class Agent<R(P...)>: public Resource, public Executor<R(P...)>, public Mailbox
 {
 
-friend class ResourceFactory<Agent<R(P...)>>;
+friend class ResourceManager;
 friend class cereal::access;
 
 public:    
@@ -32,8 +31,9 @@ public:
 
 protected:
     Agent();
-    explicit Agent(idp_t idp, std::string const& function);
+    //explicit Agent(idp_t idp, std::string const& function);
     explicit Agent(idp_t idp, std::function<R(P...)> const& f);
+    explicit Agent(idp_t idp, std::string const& module, std::string const& function);
 
 private:
 	template <typename Archive>

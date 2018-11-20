@@ -7,28 +7,30 @@ namespace cor {
 template <typename R, typename ... P>
 Executor<R(P...)>::Executor() = default;
 
-/*
+template <typename R, typename ... P>
+Executor<R(P...)>::Executor(idp_t idp, std::function<R(P...)> const& f) :
+    _idp{idp},
+    _module{},
+    _function{},
+    _f{f}
+{}
+
 template <typename R, typename ... P>
 Executor<R(P...)>::Executor(idp_t idp, std::string const& module, std::string const& function) :
     _idp{idp},
     _module{module},
-    _function{function}
+    _function{function},
+    _f{}
 {}
-*/
 
+/*
 template <typename R, typename ... P>
 Executor<R(P...)>::Executor(idp_t idp, std::string const& function) :
     _idp{idp},
     _function{function},
     _f{}
 {}
-
-template <typename R, typename ... P>
-Executor<R(P...)>::Executor(idp_t idp, std::function<R(P...)> const& f) :
-    _idp{idp},
-    _function{},
-    _f{f}
-{}
+*/
 
 template <typename R, typename ... P>
 Executor<R(P...)>::~Executor() = default;
@@ -44,11 +46,8 @@ template <typename ... Args>
 void Executor<R(P...)>::Run(Args&&... args)
 {
     // if function name 
-    if (!_function.empty()) {
-        auto ctx_idp = global::pod->GetPredecessorIdp(_idp);
-        auto ctx_rsc = global::pod->GetLocalResource<Organizer>(ctx_idp);
-        _f = global::pod->LoadFunction<R(P...)>(ctx_rsc->GetModuleName(), _function);
-    }
+    if (!_function.empty())
+        _f = global::pod->LoadFunction<R(P...)>(_module, _function);
 
     // create task and get future
     std::packaged_task<R(P...)> task(

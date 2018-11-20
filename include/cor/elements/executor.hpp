@@ -45,8 +45,9 @@ public:
 
 protected:
     Executor();
-    explicit Executor(idp_t idp, std::string const& function);
+    //explicit Executor(idp_t idp, std::string const& function);
     explicit Executor(idp_t idp, std::function<R(P...)> const& f);
+    explicit Executor(idp_t idp, std::string const& module, std::string const& function);
 
 private:
     template <typename Archive>
@@ -56,6 +57,7 @@ private:
     }
 
     idp_t _idp;
+    std::string _module;
     std::string _function;
     std::function<R(P...)> _f;
 

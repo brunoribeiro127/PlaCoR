@@ -5,9 +5,9 @@
 
 namespace cor {
 
-void Initialize(std::string const& app_group, unsigned int number_pods)
+void Initialize(std::string const& app_group, std::string const& communicator, unsigned int npods)
 {
-    global::pod = new Pod(app_group, number_pods);
+    global::pod = new Pod{app_group, communicator, npods};
     global::pod->Initialize();
 }
 
@@ -21,9 +21,9 @@ Pod * const GetPod()
     return global::pod;
 }
 
-void Spawn(int number_pods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
+void Spawn(std::string const& comm, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
 {
-    global::pod->Spawn(number_pods, module, args, hosts);
+    global::pod->Spawn(comm, npods, module, args, hosts);
 }
 
 }

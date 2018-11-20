@@ -6,7 +6,7 @@ Domain::Domain() = default;
 
 Domain::Domain(idp_t idp, std::string const& module) :
     Resource{idp},
-    Organizer{idp, module}
+    DynamicOrganizer{idp, module}
 {}
 
 Domain::~Domain() = default;

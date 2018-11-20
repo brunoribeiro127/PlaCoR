@@ -1,24 +1,64 @@
 #ifdef COR_RESOURCE_MANAGER_HPP
 
-#include "cor/elements/organizer.hpp"
+#include "cor/elements/dynamic_organizer.hpp"
+#include "cor/elements/static_organizer.hpp"
 #include "cor/services/consistency_object.hpp"
 
 namespace cor {
 
+template <typename T, typename ... Args>
+ResourcePtr<T> ResourceManager::Create(idp_t ctx, std::string const& name, bool global, std::string const& ctrl, Args&& ... args)
+{
+    auto idp = GenerateIdp();
+    auto rsc = new T(idp, std::forward<Args>(args)...);
+    return AllocateResource<T>(idp, ctx, name, global, rsc, ctrl);
+}
+
+template <typename T, typename ... Args>
+ResourcePtr<T> ResourceManager::Create(idp_t idp, idp_t ctx, std::string const& name, bool global, std::string const& ctrl, Args&& ... args)
+{
+    auto rsc = new T(idp, std::forward<Args>(args)...);
+    return AllocateResource<T>(idp, ctx, name, global, rsc, ctrl);
+}
+
+template <typename T, typename ... Args>
+ResourcePtr<T> ResourceManager::CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, bool global, std::string const& ctrl, Args&& ... args)
+{
+    ResourcePtr<T> rsc_ptr;
+
+    CreateCollectiveGroup(name, total_members);
+    auto first = GetCollectiveGroupFirst(name);
+
+    if (first) {
+        auto idp = GenerateIdp();
+        auto rsc = new T(idp, std::forward<Args>(args)...);
+        rsc_ptr = AllocateResource<T>(idp, ctx, name, false, rsc, ctrl);
+        SendCollectiveGroupIdp(name, idp);
+    } else {
+        auto idp = GetCollectiveGroupIdp(name);
+        rsc_ptr = CreateReference<T>(idp, ctx, name, ctrl);
+    }
+
+    return rsc_ptr;
+}
+
 template <typename T>
 ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, bool global, Resource *rsc, std::string const& ctrl)
 {
-    //std::cout << "Allocate Resource " << idp << "\n";
-
     // get ctx resource
     auto ctx_rsc = GetResource(ctx);
 
     // attach resource to the context
-    auto org = dynamic_cast<Organizer*>(ctx_rsc);
-    if (org != nullptr)
-        org->Attach(idp, name);
-    else
-        throw std::runtime_error("Resource " + std::to_string(ctx) + " does not have an organizer!");
+    auto dorg = dynamic_cast<DynamicOrganizer*>(ctx_rsc);
+    if (dorg != nullptr) {
+        dorg->Join(idp, name);
+    } else {
+        auto sorg = dynamic_cast<StaticOrganizer*>(ctx_rsc);
+        if (sorg != nullptr)
+            sorg->Join(idp, name);
+        else
+            throw std::runtime_error("Resource " + std::to_string(ctx) + " does not have an organizer!");
+    }
 
     // join group to control consistency of the original resource
     JoinResourceGroup(idp);
@@ -33,7 +73,7 @@ ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::stri
     cobj->SetResource(rsc);
 
     // if the resource has a mailbox, create a mailbox in mailer for the resource
-    if (dynamic_cast<Mailbox*>(rsc) != nullptr)
+    if (dynamic_cast<Mailbox*>(rsc) != nullptr || dynamic_cast<StaticOrganizer*>(rsc))
         _mlr->CreateMailbox(idp);
 
     {
@@ -50,6 +90,8 @@ ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::stri
         _ref_cntrs.emplace(idp, 0);
     }
 
+    //DummyInsertWorldContext(idp, name, rsc, ctrl);
+
     if (global)
         SendResourceAllocationInfo(idp);
 
@@ -57,7 +99,7 @@ ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::stri
 }
 
 template <typename T>
-ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ref, idp_t ctx, std::string const& name, std::string const& ctrl)
+ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ctx, std::string const& name, std::string const& ctrl)
 {
     // create replica
     CreateReplica<T>(idp, ctrl);
@@ -66,15 +108,21 @@ ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ref, idp_t ctx,
     auto ctx_rsc = GetResource(ctx);
 
     // attach resource to the context
-    auto org = dynamic_cast<Organizer*>(ctx_rsc);
+    auto org = dynamic_cast<DynamicOrganizer*>(ctx_rsc);
     if (org != nullptr)
-        org->Attach(ref, name);
+        org->Join(idp, name);
     else
         throw std::runtime_error("Resource " + std::to_string(ctx) + " does not have an organizer!");
 
-    InsertAlias(ref, idp);
+    {
+        // lock to access resource manager variables
+        std::lock_guard<std::mutex> lk(_mtx);
 
-    return GetLocalResource<T>(ref);
+        // insert relationship of ancestry
+        _predecessors.emplace(idp, ctx);
+    }
+
+    return GetLocalResource<T>(idp);
 }
 
 template <typename T>
@@ -118,7 +166,7 @@ void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
 }
 
 template <typename T>
-ResourcePtr<T>ResourceManager::GetLocalResource(idp_t idp)
+ResourcePtr<T> ResourceManager::GetLocalResource(idp_t idp)
 {
     return ResourcePtr<T>{this, idp};
 }

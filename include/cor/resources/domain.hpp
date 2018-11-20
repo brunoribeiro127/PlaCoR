@@ -4,17 +4,16 @@
 #include <string>
 
 #include "cor/resources/resource.hpp"
-#include "cor/services/resource_factory.hpp"
-#include "cor/elements/organizer.hpp"
+#include "cor/elements/dynamic_organizer.hpp"
 
 #include "cereal/types/polymorphic.hpp"
 
 namespace cor {
 
-class Domain: public Resource, public ResourceFactory<Domain>, public Organizer
+class Domain: public Resource, public DynamicOrganizer
 {
 
-friend class ResourceFactory<Domain>;
+friend class ResourceManager;
 friend class cereal::access;
 
 friend class ResourceManager; // to create meta-domain
@@ -36,7 +35,7 @@ private:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(cereal::base_class<Resource>(this), cereal::base_class<Organizer>(this));
+        ar(cereal::base_class<Resource>(this), cereal::base_class<DynamicOrganizer>(this));
     }
 
 };

@@ -31,8 +31,7 @@ void ConsistencyObject::AcquireRead()
 {
     // lock to access member variables
     std::unique_lock<std::mutex> lk(_mtx);
-
-    //std::cout << "Acquire read for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN AcquireRead -> " << _idp << std::endl;
 
     while (_writing > 0 || _wwriters > 0 || (!_validity && _reading == 1))
         _rwq.wait(lk);
@@ -48,6 +47,9 @@ void ConsistencyObject::AcquireRead()
         // wait for update
         _rwq.wait(lk, [this]{ return _validity; });
 
+        // no longer waiting for update
+        _wupdate = false;
+
         // notify all threads in the readers wait queue
         _rwq.notify_all();
     }
@@ -55,15 +57,14 @@ void ConsistencyObject::AcquireRead()
     // notify all waiting requests
     _reqwq.notify_all();
 
-    //std::cout << "Acquire read for resource <" << _idp << "> succeded\n";
+    //std::cout << "END AcquireRead -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::ReleaseRead()
 {
     // lock to access member variables
     std::lock_guard<std::mutex> lk(_mtx);
-
-    //std::cout << "ReleaseRead for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN ReleaseRead -> " << _idp << std::endl;
 
     // stop reading
     --_reading;
@@ -77,15 +78,14 @@ void ConsistencyObject::ReleaseRead()
     // notify all waiting requests
     _reqwq.notify_all();
 
-    //std::cout << "ReleaseRead for resource <" << _idp << "> succeded\n";
+    //std::cout << "END ReleaseRead -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::AcquireWrite()
 {
     // lock to access member variables
     std::unique_lock<std::mutex> lk(_mtx);
-
-    //std::cout << "AcquireWrite for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN AcquireWrite -> " << _idp << std::endl;
 
     ++_wwriters;
 
@@ -98,6 +98,9 @@ void ConsistencyObject::AcquireWrite()
         
         // wait for token update
         _wwq.wait(lk, [this]{ return _token && _validity; });
+
+        // no longer waiting for token
+        _wtoken = false;
     }
 
     // start writing
@@ -107,15 +110,14 @@ void ConsistencyObject::AcquireWrite()
     // notify all waiting requests
     _reqwq.notify_all();
 
-    //std::cout << "AcquireWrite for resource <" << _idp << "> succeded\n";
+    //std::cout << "END AcquireWrite -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::ReleaseWrite()
 {
     // lock to access member variables
     std::lock_guard<std::mutex> lk(_mtx);
-
-    //std::cout << "ReleaseWrite for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN ReleaseWrite -> " << _idp << std::endl;
 
     // send invalidate request
     _rsc_mgr->RequestInvalidate(_idp);
@@ -133,15 +135,14 @@ void ConsistencyObject::ReleaseWrite()
     // notify all waiting requests
     _reqwq.notify_all();
 
-    //std::cout << "ReleaseWrite for resource <" << _idp << "> succeded\n";
+    //std::cout << "END ReleaseWrite -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::AcquireReplica(Resource *rsc, std::string const& replier)
 {
     // lock to access member variables
     std::unique_lock<std::mutex> lk(_mtx);
-
-    //std::cout << "AcquireReplica from " << replier << " for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN AcquireReplica -> " << _idp << std::endl;
 
     // assign resource pointer
     _rsc = rsc;
@@ -149,7 +150,7 @@ void ConsistencyObject::AcquireReplica(Resource *rsc, std::string const& replier
     // no longer waiting for replica
     _wreplica = false;
 
-    //std::cout << "AcquireReplica from " << replier << " for resource <" << _idp << "> succeded\n";
+    //std::cout << "END AcquireReplica -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::CheckReplica(std::string const& requester)
@@ -158,8 +159,7 @@ void ConsistencyObject::CheckReplica(std::string const& requester)
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
-
-        //std::cout << "CheckReplica from " << requester << " for resource <" << _idp << ">\n";
+        //std::cout << "BEGIN SELF CheckReplica -> " << _idp << std::endl;
 
         // generate request number
         auto req_no = _total_req++;
@@ -176,14 +176,13 @@ void ConsistencyObject::CheckReplica(std::string const& requester)
         // notify waiting requests
         _reqwq.notify_all();
 
-        //std::cout << "CheckReplica from " << requester << " for resource <" << _idp << "> succeded\n";
+        //std::cout << "END SELF CheckReplica -> " << _idp << std::endl;
 
     } else {
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
-
-        //std::cout << "CheckReplica from " << requester << " for resource <" << _idp << ">\n";
+        //std::cout << "BEGIN CheckReplica -> " << _idp << std::endl;
 
         // generate request number
         auto req_no = _total_req++;
@@ -200,8 +199,8 @@ void ConsistencyObject::CheckReplica(std::string const& requester)
         // notify waiting requests
         _reqwq.notify_all();
 
-        //std::cout << "CheckReplica from " << requester << " for resource <" << _idp << "> succeded\n";
-    
+        //std::cout << "END CheckReplica -> " << _idp << std::endl;
+
     }
 }
 
@@ -209,8 +208,7 @@ void ConsistencyObject::AcquireTokenUpdate(Resource *rsc, std::string const& rep
 {
     // lock to access member variables
     std::unique_lock<std::mutex> lk(_mtx);
-
-    //std::cout << "AcquireTokenUpdate from " << replier << " for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN AcquireTokenUpdate -> " << _idp << std::endl;
 
     // acquire token
     _token = true;
@@ -219,16 +217,13 @@ void ConsistencyObject::AcquireTokenUpdate(Resource *rsc, std::string const& rep
     _update_func(_rsc, rsc);
     _validity = true;
 
-    // no longer waiting for token
-    _wtoken = false;
-
     // send token ack
     _rsc_mgr->SendTokenAck(_idp, replier);
 
     // notify waiting writer
     _wwq.notify_all();
 
-    //std::cout << "AcquireTokenUpdate from " << replier << " for resource <" << _idp << "> succeded\n";
+    //std::cout << "END AcquireTokenUpdate -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::CheckTokenUpdate(std::string const& requester)
@@ -237,8 +232,7 @@ void ConsistencyObject::CheckTokenUpdate(std::string const& requester)
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
-
-        //std::cout << "ReleaseTokenUpdate from " << requester << " for resource <" << _idp << ">\n";
+        //std::cout << "BEGIN SELF CheckTokenUpdate -> " << _idp << std::endl;
 
         // generate request number
         auto req_no = _total_req++;
@@ -255,14 +249,13 @@ void ConsistencyObject::CheckTokenUpdate(std::string const& requester)
         // notify waiting requests
         _reqwq.notify_all();
 
-        //std::cout << "ReleaseTokenUpdate from " << requester << " for resource <" << _idp << "> succeded\n";
+        //std::cout << "END SELF CheckTokenUpdate -> " << _idp << std::endl;
 
     } else {
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
-
-        //std::cout << "ReleaseTokenUpdate from " << requester << " for resource <" << _idp << ">\n";
+        //std::cout << "BEGIN CheckTokenUpdate -> " << _idp << std::endl;
 
         // generate request number
         auto req_no = _total_req++;
@@ -288,7 +281,7 @@ void ConsistencyObject::CheckTokenUpdate(std::string const& requester)
         // notify waiting requests
         _reqwq.notify_all();
 
-        //std::cout << "ReleaseTokenUpdate from " << requester << " for resource <" << _idp << "> succeded\n";
+        //std::cout << "END CheckTokenUpdate -> " << _idp << std::endl;
     }
 }
 
@@ -298,8 +291,8 @@ void ConsistencyObject::Invalidate(std::string const& requester)
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
+        //std::cout << "BEGIN SELF Invalidate -> " << _idp << std::endl;
 
-        //std::cout << "Invalidate from " << requester << " for resource <" << _idp << ">\n";
 /*
         // generate request number
         auto req_no = _total_req++;
@@ -313,14 +306,14 @@ void ConsistencyObject::Invalidate(std::string const& requester)
         // notify waiting requests
         //_reqwq.notify_all();
 
-        //std::cout << "Invalidate from " << requester << " for resource <" << _idp << "> succeded\n";
+        //std::cout << "END SELF Invalidate -> " << _idp << std::endl;
 
     } else {
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
+        //std::cout << "BEGIN Invalidate -> " << _idp << std::endl;
 
-        //std::cout << "Invalidate from " << requester << " for resource <" << _idp << ">\n";
 /*
         // generate request number
         auto req_no = _total_req++;
@@ -337,7 +330,7 @@ void ConsistencyObject::Invalidate(std::string const& requester)
         // notify waiting requests
         //_reqwq.notify_all();
 
-        //std::cout << "Invalidate from " << requester << " for resource <" << _idp << "> succeded\n";
+        //std::cout << "END Invalidate -> " << _idp << std::endl;
     }
 }
 
@@ -345,20 +338,16 @@ void ConsistencyObject::Update(Resource *rsc, std::string const& replier)
 {
     // lock to access member variables
     std::unique_lock<std::mutex> lk(_mtx);
-
-    //std::cout << "Update from " << replier << " for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN Update -> " << _idp << std::endl;
 
     // update resource and mark local replica as valid
     _update_func(_rsc, rsc);
     _validity = true;
 
-    // no longer waiting for update
-    _wupdate = false;
-
     // notify waiting reader
     _rwq.notify_all();
 
-    //std::cout << "Update from " << replier << " for resource <" << _idp << "> succeded\n";
+    //std::cout << "END Update -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::CheckUpdate(std::string const& requester)
@@ -367,8 +356,7 @@ void ConsistencyObject::CheckUpdate(std::string const& requester)
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
-
-        //std::cout << "CheckUpdate from " << requester << " for resource <" << _idp << ">\n";
+        //std::cout << "BEGIN SELF CheckUpdate -> " << _idp << std::endl;
 
         // generate request number
         auto req_no = _total_req++;
@@ -385,14 +373,13 @@ void ConsistencyObject::CheckUpdate(std::string const& requester)
         // notify waiting requests
         _reqwq.notify_all();
 
-        //std::cout << "CheckUpdate from " << requester << " for resource <" << _idp << "> succeded\n";
+        //std::cout << "END SELF CheckUpdate -> " << _idp << std::endl;
 
     } else {
 
         // lock to access member variables
         std::unique_lock<std::mutex> lk(_mtx);
-
-        //std::cout << "CheckUpdate from " << requester << " for resource <" << _idp << ">\n";
+        //std::cout << "BEGIN CheckUpdate -> " << _idp << std::endl;
 
         // generate request number
         auto req_no = _total_req++;
@@ -410,7 +397,7 @@ void ConsistencyObject::CheckUpdate(std::string const& requester)
         // notify waiting requests
         _reqwq.notify_all();
 
-        //std::cout << "CheckUpdate from " << requester << " for resource <" << _idp << "> succeded\n";
+        //std::cout << "END CheckUpdate -> " << _idp << std::endl;
 
     }
 }
@@ -419,8 +406,7 @@ void ConsistencyObject::TokenAck(std::string const& replier)
 {
     // lock to access member variables
     std::unique_lock<std::mutex> lk(_mtx);
-
-    //std::cout << "TokenAck from " << replier << " for resource <" << _idp << ">\n";
+    //std::cout << "BEGIN TokenAck -> " << _idp << std::endl;
 
     // no longer waiting for token ack
     _wtoken_ack = false;
@@ -428,7 +414,7 @@ void ConsistencyObject::TokenAck(std::string const& replier)
     // notify waiting requests
     _reqwq.notify_all();
 
-    //std::cout << "TokenAck from " << replier << " for resource <" << _idp << "> succeded\n";
+    //std::cout << "END TokenAck -> " << _idp << std::endl;
 }
 
 void ConsistencyObject::SetResource(Resource *rsc)

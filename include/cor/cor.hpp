@@ -7,13 +7,11 @@
 
 namespace cor {
 
-    void Initialize(std::string const& app_group, unsigned int number_pods);
+    void Initialize(std::string const& app_group, std::string const& communicator, unsigned int npods);
 
     void Finalize();
 
     Pod * const GetPod();
-
-    void Spawn(int number_pods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
 
 }
 

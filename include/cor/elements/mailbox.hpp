@@ -31,6 +31,9 @@ public:
     Message Receive(idp_t source) const;
 
     // primitivas de comunicação no contexto de grupos
+    //void Broadcast(idp_t group, Message& msg) const;
+    //void Send(idp_t group, idm_t dest, Message& msg) const;
+
 /*
     void Multicast(idp_t dest, Message& msg) const;
     void Broadcast(idp_t group, Message& msg) const;

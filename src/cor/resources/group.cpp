@@ -6,7 +6,7 @@ Group::Group() = default;
 
 Group::Group(idp_t idp, std::string const& module) :
     Resource{idp},
-    Organizer{idp, module}
+    DynamicOrganizer{idp, module}
 {}
 
 Group::~Group() = default;

@@ -1,11 +1,11 @@
-add_executable(cor cor.cpp)
+add_executable(corx corx.cpp)
 
-target_compile_features(cor PUBLIC cxx_std_14)
-set_target_properties(cor PROPERTIES CXX_EXTENSIONS OFF)
-set_target_properties(cor PROPERTIES COMPILE_FLAGS -O2)
+target_compile_features(corx PUBLIC cxx_std_14)
+set_target_properties(corx PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(corx PROPERTIES COMPILE_FLAGS -O2)
 
 target_link_libraries(
-    cor
+    corx
     PRIVATE
         libcor
         Spread
@@ -18,7 +18,7 @@ target_link_libraries(
 
 install(
     TARGETS
-        cor
+        corx
     RUNTIME
         DESTINATION bin
 )

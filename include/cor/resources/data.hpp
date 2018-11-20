@@ -2,7 +2,6 @@
 #define COR_DATA_HPP
 
 #include "cor/resources/resource.hpp"
-#include "cor/services/resource_factory.hpp"
 #include "cor/elements/value.hpp"
 
 #include "cereal/types/polymorphic.hpp"
@@ -10,10 +9,10 @@
 namespace cor {
 
 template <typename T>
-class Data: public Resource, public ResourceFactory<Data<T>>, public Value<T>
+class Data: public Resource, public Value<T>
 {
 
-friend class ResourceFactory<Data<T>>;
+friend class ResourceManager;
 friend class cereal::access;
 
 public:    

@@ -84,7 +84,9 @@ int main(int argc, char const *argv[])
 
     // assemble command
     std::string cmd;
-    cmd.append("cor");
+    cmd.append("corx");
+    cmd.append(" ");
+    cmd.append(app_group);
     cmd.append(" ");
     cmd.append(app_group);
     cmd.append(" ");

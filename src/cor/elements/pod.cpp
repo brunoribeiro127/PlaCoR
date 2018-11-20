@@ -6,7 +6,7 @@ using namespace dll;
 
 namespace cor {
 
-Pod::Pod(std::string const& app_group, unsigned int number_pods) :
+Pod::Pod(std::string const& app_group, std::string const& communicator, unsigned int npods) :
     _mlr{nullptr},
     _ctrl{nullptr},
     _modules{},
@@ -14,7 +14,7 @@ Pod::Pod(std::string const& app_group, unsigned int number_pods) :
 {
     // create a local instance of controller and mailer
     _mlr = new Mailer{app_group};
-    _ctrl = new Controller{app_group, number_pods, _mlr};
+    _ctrl = new Controller{app_group, communicator, npods, _mlr};
 }
 
 Pod::~Pod()
@@ -35,11 +35,6 @@ void Pod::Finalize()
     // stop controller and mailer services
     _ctrl->StopService();
     _mlr->StopService();
-}
-
-unsigned int Pod::GetNumberPods() const
-{
-    return _ctrl->GetNumberPods();
 }
 
 idp_t Pod::GetActiveResourceIdp()
@@ -64,9 +59,10 @@ idp_t Pod::GetPredecessorIdp(idp_t idp)
     return _ctrl->GetPredecessorIdp(idp);
 }
 
-void Pod::Spawn(int number_pods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
+idp_t Pod::Spawn(std::string const& comm, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
 {
-    _ctrl->Spawn(number_pods, module, args, hosts);
+    auto parent = GetActiveResourceIdp();
+    return _ctrl->Spawn(comm, npods, parent, module, args, hosts);
 }
 
 idp_t Pod::GenerateIdp()
@@ -131,6 +127,11 @@ Message Pod::ReceiveMessage(idp_t idp)
 Message Pod::ReceiveMessage(idp_t idp, idp_t source)
 {
     return _mlr->ReceiveMessage(idp, source);
+}
+
+void Pod::SynchronizeCollectiveGroup(std::string const& comm)
+{
+    _ctrl->SynchronizeCollectiveGroup(comm);
 }
 
 }

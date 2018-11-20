@@ -7,6 +7,8 @@
 
 namespace cor {
 
+template <typename> class ResourcePtr;
+
 template <typename T>
 class ResourcePtr
 {

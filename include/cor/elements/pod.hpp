@@ -11,33 +11,33 @@
 #include "cor/system/macros.hpp"
 #include "dll/dll.hpp"
 
+#include "cor/services/resource_ptr.hpp"
+
 namespace cor {
 
 class Mailer;
 class Resource;
 class ConsistencyObject;
-template <typename> class ResourcePtr;
 
 class Pod
 {
 
 template <typename> friend class ResourceFactory;
 
-friend class Organizer;
+friend class DynamicOrganizer;
 template <typename> friend class Value;
 template <typename> friend class Executor;
 friend class Mailbox;
 friend class Synchronizer;
+friend class StaticOrganizer;
 
 public:
-    explicit Pod(std::string const& app_group, unsigned int number_pods);
+    explicit Pod(std::string const& app_group, std::string const& communicator, unsigned int npods);
 
     ~Pod();
 
     void Initialize();
     void Finalize();
-
-    unsigned int GetNumberPods() const;
 
     idp_t GetActiveResourceIdp();
     idp_t GetDomainIdp();
@@ -51,16 +51,16 @@ public:
     template <typename T>
     ResourcePtr<T> GetLocalResource(idp_t idp);
 
+    template <typename T, typename ... Args>
+    ResourcePtr<T> Create(idp_t ctx, std::string const& name, bool global, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, bool global, Args&& ... args);
+
     template <typename T>
     ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name);
 
-    void Spawn(int number_pods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
-/*
-    // app_group -> internal
-    // number_pods -> number_pods needed
-    // module -> module needed
-    // args -> args needed
-*/
+    idp_t Spawn(std::string const& comm, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
 
     Pod() = delete;
     Pod(const Pod&) = delete;
@@ -95,6 +95,9 @@ protected:
     void SendMessage(idp_t idp, std::vector<idp_t> const& dests, Message& msg);
     Message ReceiveMessage(idp_t idp);
     Message ReceiveMessage(idp_t idp, idp_t source);
+
+    // accessed by StaticOrganizer
+    void SynchronizeCollectiveGroup(std::string const& comm);
 
 private:
     Mailer *_mlr;

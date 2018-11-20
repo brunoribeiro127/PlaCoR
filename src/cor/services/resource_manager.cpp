@@ -1,7 +1,10 @@
 #include "cor/services/resource_manager.hpp"
 
+#include "cor/services/controller.hpp"
 #include "cor/resources/domain.hpp"
+#include "cor/resources/group.hpp"
 #include "cor/system/macros.hpp"
+#include "cor/services/resource_ptr.hpp"
 
 #include <typeinfo>
 #include <cassert>
@@ -21,7 +24,6 @@ ResourceManager::ResourceManager(Controller *ctrl, Mailer *mlr, bool first) :
     _cst_objs{},
     _sync_replicas{},
     _predecessors{},
-    _alias{},
     _mtx{}
 {}
 
@@ -68,7 +70,7 @@ void ResourceManager::CreateMetaDomain(std::string const& ctrl)
     }
 
     // self join of meta-domain resource
-    rsc->Attach(cor::MetaDomain, "MetaDomain");
+    rsc->Join(cor::MetaDomain, "MetaDomain");
 
     SendResourceAllocationInfo(cor::MetaDomain);
 }
@@ -76,7 +78,7 @@ void ResourceManager::CreateMetaDomain(std::string const& ctrl)
 void ResourceManager::InsertResourceReplica(idp_t idp, Resource *rsc, std::string const& ctrl)
 {
     // if the resource has a mailbox, create a mailbox in mailer for the resource
-    if (dynamic_cast<Mailbox*>(rsc) != nullptr)
+    if (dynamic_cast<Mailbox*>(rsc) != nullptr || dynamic_cast<StaticOrganizer*>(rsc))
         _mlr->CreateMailbox(idp);
 
     {
@@ -96,8 +98,7 @@ void ResourceManager::InsertResourceReplica(idp_t idp, Resource *rsc, std::strin
 
 Resource *ResourceManager::GetResource(idp_t idp)
 {
-    auto orig_id = ResolveIdp(idp);
-    auto cobj = GetConsistencyObject(orig_id);
+    auto cobj = GetConsistencyObject(idp);
     return cobj->GetResource();
 }
 
@@ -262,23 +263,129 @@ void ResourceManager::JoinResourceGroup(idp_t idp)
     _ctrl->JoinResourceGroup(idp);
 }
 
-void ResourceManager::InsertAlias(idp_t alias, idp_t idp)
+void ResourceManager::CreateCollectiveGroup(std::string const& comm, unsigned int total_members)
 {
-    // lock to access resource manager variables
-    std::unique_lock<std::mutex> lk(_mtx); //shared_lock
-    _alias.emplace(alias, idp);
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        _cg_sync.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());
+        _cg_vars.emplace(comm, std::make_tuple(0, total_members));
+        
+        if (_cg_cv.find(comm) == _cg_cv.end())
+            _cg_cv.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());
+        else
+            _cg_cv.at(comm).notify_all();
+    }
+
+    _ctrl->SendCollectiveGroupCreate(comm);
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        while (std::get<0>(_cg_vars.at(comm)) != std::get<1>(_cg_vars.at(comm)))
+            _cg_cv.at(comm).wait(lk);
+        std::get<0>(_cg_vars.at(comm)) = 0;
+    }
 }
 
-idp_t ResourceManager::ResolveIdp(idp_t idp)
+void ResourceManager::HandleCreateCollectiveGroup(std::string const& comm, bool self)
 {
-    // lock to access resource manager variables
-    std::unique_lock<std::mutex> lk(_mtx); //shared_lock
+    std::unique_lock<std::mutex> lk(_mtx);
+    if (_cg_vars.find(comm) == _cg_vars.end()) {
 
-    auto it = _alias.find(idp);
-    if (it == _alias.end())
-        return idp;
-    else
-        return it->second;
+        if (_cg_cv.find(comm) == _cg_cv.end())
+            _cg_cv.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());
+
+        _cg_cv.at(comm).wait(lk);
+    }
+
+    std::get<0>(_cg_vars.at(comm)) += 1;
+
+    if (std::get<0>(_cg_vars.at(comm)) == 1)
+        std::get<0>(_cg_sync.at(comm)).set_value(self);
+
+    if (std::get<0>(_cg_vars.at(comm)) == std::get<1>(_cg_vars.at(comm)))
+        _cg_cv.at(comm).notify_one();
+}
+
+void ResourceManager::SynchronizeCollectiveGroup(std::string const& comm)
+{
+    _ctrl->SendCollectiveGroupSync(comm);
+    
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        //std::cout << "BEGIN SynchronizeCollectiveGroup" << std::endl;
+        while (std::get<0>(_cg_vars.at(comm)) != std::get<1>(_cg_vars.at(comm)))
+            _cg_cv.at(comm).wait(lk);
+        std::get<0>(_cg_vars.at(comm)) = 0;
+        //std::cout << "END SynchronizeCollectiveGroup" << std::endl;
+    }
+}
+
+void ResourceManager::HandleSynchronizeCollectiveGroup(std::string const& comm)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+    //std::cout << "BEGIN HandleSynchronizeCollectiveGroup" << std::endl;
+
+    std::get<0>(_cg_vars.at(comm)) += 1;
+
+    if (std::get<0>(_cg_vars.at(comm)) == std::get<1>(_cg_vars.at(comm)))
+        _cg_cv.at(comm).notify_one();
+    //std::cout << "END HandleSynchronizeCollectiveGroup" << std::endl;
+}
+
+void ResourceManager::SendCollectiveGroupIdp(std::string const& comm, idp_t idp)
+{
+    _ctrl->SendCollectiveGroupIdp(comm, idp);
+}
+
+bool ResourceManager::GetCollectiveGroupFirst(std::string const& comm)
+{
+    std::future<bool> future;
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        future = std::get<0>(_cg_sync.at(comm)).get_future();
+    }
+
+    return future.get();
+}
+
+idp_t ResourceManager::GetCollectiveGroupIdp(std::string const& comm)
+{
+    std::future<idp_t> future;
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        future = std::get<1>(_cg_sync.at(comm)).get_future();
+    }
+
+    return future.get();
+}
+
+void ResourceManager::SetCollectiveGroupIdp(std::string const& comm, idp_t idp)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+    std::get<1>(_cg_sync.at(comm)).set_value(idp);
+}
+
+idp_t ResourceManager::GenerateIdp()
+{
+    return _ctrl->GenerateIdp();
+}
+
+void ResourceManager::DummyInsertWorldContext(idp_t idp, std::string const& name, Resource *rsc, std::string const& ctrl)
+{
+    if (dynamic_cast<Domain*>(rsc) != nullptr) {
+        if (idp == cor::MasterDomain) {
+            std::cout << "ANTES" << std::endl;
+            Create<cor::Group>(cor::ResourceWorld, idp, "ResourceWorld", true, ctrl, "");
+            std::cout << "DEPOIS" << std::endl;
+        }
+        else
+            CreateReference<cor::Group>(cor::ResourceWorld, idp, "ResourceWorld", ctrl);
+    }
+
+    auto rsc_world = GetLocalResource<cor::Group>(cor::ResourceWorld);
+    rsc_world->Join(idp, name);
 }
 
 }
