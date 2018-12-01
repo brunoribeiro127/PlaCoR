@@ -1,12 +1,12 @@
 get_filename_component(Spread_MODULE_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-set(SPREAD_ROOT "${SPREAD_ROOT}" CACHE PATH "Spread root directory")
+set(Spread_ROOT "${Spread_ROOT}" CACHE PATH "Spread root directory")
 
 find_path(Spread_INCLUDE_DIR
     NAMES
         sp.h
     PATHS
-        "${SPREAD_ROOT}"
+        "${Spread_ROOT}"
     PATH_SUFFIXES
         include
 )
@@ -15,7 +15,7 @@ find_program(Spread_EXECUTABLE
     NAMES
         spread
     PATHS
-        "${SPREAD_ROOT}"
+        "${Spread_ROOT}"
     PATH_SUFFIXES
         bin
         sbin
@@ -30,7 +30,7 @@ find_library(Spread_LIBRARY
     NAMES
         ${Spread_LIBRARY_NAME}
     PATHS
-        "${SPREAD_ROOT}"
+        "${Spread_ROOT}"
     PATH_SUFFIXES
         lib
 )
@@ -96,5 +96,5 @@ endif()
 mark_as_advanced(Spread_INCLUDE_DIR Spread_LIBRARY_NAME Spread_LIBRARY Spread_EXECUTABLE Spread_VERSION_ACCEPTABLE)
 
 if(Spread_FOUND)
-    mark_as_advanced(SPREAD_ROOT)
+    mark_as_advanced(Spread_ROOT)
 endif()

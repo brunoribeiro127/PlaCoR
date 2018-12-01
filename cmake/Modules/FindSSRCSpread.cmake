@@ -1,12 +1,12 @@
 get_filename_component(SSRCSpread_MODULE_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-set(SSRCSPREAD_ROOT "${SSRCSPREAD_ROOT}" CACHE PATH "SSRCSpread root directory")
+set(SSRCSpread_ROOT "${SSRCSpread_ROOT}" CACHE PATH "SSRCSpread root directory")
 
 find_path(SSRCSpread_INCLUDE_DIR
     NAMES
         ssrc/spread.h       
     PATHS
-        "${SSRCSPREAD_ROOT}"
+        "${SSRCSpread_ROOT}"
     PATH_SUFFIXES
         include
 )
@@ -20,7 +20,7 @@ find_library(SSRCSpread_LIBRARY
     NAMES
         ${SSRCSpread_LIBRARY_NAME}
     PATHS
-        "${SSRCSPREAD_ROOT}"
+        "${SSRCSpread_ROOT}"
     PATH_SUFFIXES
         lib
 )
@@ -76,5 +76,5 @@ endif()
 mark_as_advanced(SSRCSpread_INCLUDE_DIR SSRCSpread_LIBRARY_NAME SSRCSpread_LIBRARY SSRCSpread_VERSION_ACCEPTABLE)
 
 if(SSRCSpread_FOUND)
-    mark_as_advanced(SSRCSPREAD_ROOT)
+    mark_as_advanced(SSRCSpread_ROOT)
 endif()

@@ -1,10 +1,10 @@
-set(CEREAL_ROOT "${CEREAL_ROOT}" CACHE PATH "Cereal root directory")
+set(Cereal_ROOT "${Cereal_ROOT}" CACHE PATH "Cereal root directory")
 
 find_path(Cereal_INCLUDE_DIR
     NAMES
         cereal/cereal.hpp
     PATHS
-        "${CEREAL_ROOT}"
+        "${Cereal_ROOT}"
     PATH_SUFFIXES
         include
 )
@@ -28,5 +28,5 @@ endif()
 mark_as_advanced(Cereal_INCLUDE_DIR)
 
 if(Cereal_FOUND)
-    mark_as_advanced(CEREAL_ROOT)
+    mark_as_advanced(Cereal_ROOT)
 endif()

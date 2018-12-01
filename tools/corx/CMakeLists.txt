@@ -4,6 +4,20 @@ target_compile_features(corx PUBLIC cxx_std_14)
 set_target_properties(corx PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(corx PROPERTIES COMPILE_FLAGS -O2)
 
+if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+target_link_libraries(
+    corx
+    PRIVATE
+        libcor
+        Spread
+        SSRCSpread
+        LibEvent
+        Cereal
+        LibSSH
+        Boost::boost
+        -lssp
+)
+else(CMAKE_SYSTEM_NAME MATCHES "SunOS")
 target_link_libraries(
     corx
     PRIVATE
@@ -15,6 +29,7 @@ target_link_libraries(
         LibSSH
         Boost::boost
 )
+endif(CMAKE_SYSTEM_NAME MATCHES "SunOS")
 
 install(
     TARGETS

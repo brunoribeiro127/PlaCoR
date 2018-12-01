@@ -9,7 +9,7 @@
 #include "cor/services/controller.hpp"
 #include "cor/message.hpp"
 #include "cor/system/macros.hpp"
-#include "dll/dll.hpp"
+#include "cor/external/dll/dll.hpp"
 
 #include "cor/services/resource_ptr.hpp"
 

@@ -133,7 +133,7 @@ idp_t Controller::Spawn(std::string const& comm, unsigned int npods, idp_t paren
         cmd.append(args[i]);
     }
 
-    //std::cout << cmd << std::endl;
+    std::cout << cmd << std::endl;
 
     // spawn pods
     for (int i = 0; i < npods; ++i) {

@@ -8,7 +8,7 @@
 #include <mutex>
 
 #include <ssrc/spread.h>
-#include <event/event.hpp>
+#include "cor/external/event/event.hpp"
 
 #include "cor/system/macros.hpp"
 #include "cor/services/page_manager.hpp"

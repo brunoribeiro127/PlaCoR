@@ -1,29 +1,37 @@
-#include "cor/elements/dynamic_organizer.hpp"
+#include "cor/elements/static_organizer.hpp"
 
 #include "cor/system/system.hpp"
 #include "cor/services/consistency_object.hpp"
+#include "cor/message.hpp"
+
+#include <algorithm>
 
 namespace cor {
 
-DynamicOrganizer::DynamicOrganizer() = default;
+StaticOrganizer::StaticOrganizer() = default;
 
-DynamicOrganizer::DynamicOrganizer(idp_t idp, std::string const& module) :
+StaticOrganizer::StaticOrganizer(idp_t idp, std::string const& comm, unsigned int total_members, idp_t parent) :
     _idp{idp},
-    _module{module},
+    _comm{comm},
+    _total_members{total_members},
+    _parent{parent},
     _members{},
     _next_idm{0}
 {
-    LoadModule();
+/*
+    Message msg;
+    global::pod->SendMessage(_idp, _parent, msg);
+*/
 }
 
-DynamicOrganizer::~DynamicOrganizer() = default;
+StaticOrganizer::~StaticOrganizer() = default;
 
-DynamicOrganizer::DynamicOrganizer(DynamicOrganizer&&) noexcept = default;
+StaticOrganizer::StaticOrganizer(StaticOrganizer&&) noexcept = default;
 
-DynamicOrganizer& DynamicOrganizer::operator=(DynamicOrganizer&&) noexcept = default;
+StaticOrganizer& StaticOrganizer::operator=(StaticOrganizer&&) noexcept = default;
 
-void DynamicOrganizer::Join(idp_t idp, std::string const& name)
-{   
+void StaticOrganizer::Join(idp_t idp, std::string const& name)
+{
     // get consistency object
     auto cobj = global::pod->GetConsistencyObject(_idp);
 
@@ -51,26 +59,28 @@ void DynamicOrganizer::Join(idp_t idp, std::string const& name)
 
     // release write
     cobj->ReleaseWrite();
+
+    // Synchronize join
+    global::pod->SynchronizeCollectiveGroup(_comm);
+
+    if (idm == 0) {
+        Message msg;
+        global::pod->SendMessage(_idp, _parent, msg);
+    }
 }
 
-void DynamicOrganizer::Leave(idp_t idp)
+void StaticOrganizer::Leave(idp_t idp)
 {
-    
+    // synchronize leave
+    //global::pod->SynchronizeCollectiveGroup(_comm);
 }
 
-void DynamicOrganizer::LoadModule() const
+idp_t StaticOrganizer::GetParent() const
 {
-    // if has a module, then load it
-    if (!_module.empty())
-        global::pod->LoadModule(_module);
+    return _parent;
 }
 
-std::string const& DynamicOrganizer::GetModuleName() const
-{
-    return _module;
-}
-
-size_t DynamicOrganizer::GetTotalMembers() const
+size_t StaticOrganizer::GetTotalMembers() const
 {
     // get consistency object
     auto cobj = global::pod->GetConsistencyObject(_idp);
@@ -86,7 +96,7 @@ size_t DynamicOrganizer::GetTotalMembers() const
     return size;
 }
 
-idp_t DynamicOrganizer::GetIdp(idm_t idm) const
+idp_t StaticOrganizer::GetIdp(idm_t idm) const
 {
     // get consistency object
     auto cobj = global::pod->GetConsistencyObject(_idp);
@@ -112,7 +122,7 @@ idp_t DynamicOrganizer::GetIdp(idm_t idm) const
     }
 }
 
-idp_t DynamicOrganizer::GetIdp(std::string const& name) const
+idp_t StaticOrganizer::GetIdp(std::string const& name) const
 {
     // get consistency object
     auto cobj = global::pod->GetConsistencyObject(_idp);
@@ -138,7 +148,7 @@ idp_t DynamicOrganizer::GetIdp(std::string const& name) const
     }
 }
 
-idm_t DynamicOrganizer::GetIdm(idp_t idp) const
+idm_t StaticOrganizer::GetIdm(idp_t idp) const
 {
     // get consistency object
     auto cobj = global::pod->GetConsistencyObject(_idp);
@@ -154,7 +164,7 @@ idm_t DynamicOrganizer::GetIdm(idp_t idp) const
     return idm;
 }
 
-idm_t DynamicOrganizer::GetIdm(std::string const& name) const
+idm_t StaticOrganizer::GetIdm(std::string const& name) const
 {
     // get consistency object
     auto cobj = global::pod->GetConsistencyObject(_idp);

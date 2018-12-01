@@ -19,9 +19,9 @@ namespace ev
         Write 		= EV_WRITE,
         Signal 		= EV_SIGNAL,
         Persist 	= EV_PERSIST,
-        EdgeTrigger = EV_ET,
-        Finalize 	= EV_FINALIZE,
-        Closed 		= EV_CLOSED
+        EdgeTrigger = EV_ET
+        //Finalize 	= EV_FINALIZE,
+        //Closed    = EV_CLOSED
     };
 
     constexpr typename std::underlying_type<Events>::type underlying_cast(Events ev) noexcept

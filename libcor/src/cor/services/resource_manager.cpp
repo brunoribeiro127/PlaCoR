@@ -268,7 +268,7 @@ void ResourceManager::CreateCollectiveGroup(std::string const& comm, unsigned in
     {
         std::unique_lock<std::mutex> lk(_mtx);
         _cg_sync.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());
-        _cg_vars.emplace(comm, std::make_tuple(0, total_members));
+        _cg_vars.emplace(comm, std::make_pair(0, total_members));
         
         if (_cg_cv.find(comm) == _cg_cv.end())
             _cg_cv.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());

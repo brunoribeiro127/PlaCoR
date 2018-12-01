@@ -1,4 +1,4 @@
-add_library(libcor SHARED)
+add_library(libcor SHARED "")
 
 target_compile_features(libcor PUBLIC cxx_std_14)
 set_target_properties(libcor PROPERTIES CXX_EXTENSIONS OFF)
@@ -9,7 +9,7 @@ set_target_properties(libcor PROPERTIES COMPILE_FLAGS -O2)
 target_include_directories(
     libcor
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libcor/include>
         $<INSTALL_INTERFACE:include>
 )
 
@@ -41,13 +41,4 @@ install(
         libcor
     LIBRARY
         DESTINATION lib
-)
-
-install(
-    DIRECTORY
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../include/cor"
-    DESTINATION
-        include
-    FILES_MATCHING
-        PATTERN "*.[ht]pp"
 )

@@ -1,11 +1,13 @@
-#ifndef REMOTE_SESSION_HPP
-#define REMOTE_SESSION_HPP
+#ifndef COR_REMOTE_SESSION_HPP
+#define COR_REMOTE_SESSION_HPP
 
-#include "libssh/libssh.hpp"
+#include "cor/external/libssh/libssh.hpp"
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+
+namespace cor {
 
 class SessionManager;
 
@@ -28,8 +30,6 @@ public:
     void Wait();
 
 private:
-    void Start();
-    void Stop();
     void operator()();
 
     std::string _host;
@@ -50,5 +50,7 @@ private:
     bool _done;
 
 };
+
+}
 
 #endif

@@ -1,12 +1,12 @@
 get_filename_component(LibEvent_MODULE_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-set(LIBEVENT_ROOT "${LIBEVENT_ROOT}" CACHE PATH "LibEvent root directory")
+set(LibEvent_ROOT "${LibEvent_ROOT}" CACHE PATH "LibEvent root directory")
 
 find_path(LibEvent_INCLUDE_DIR
     NAMES
         event.h        
     PATHS
-        "${LIBEVENT_ROOT}"
+        "${LibEvent_ROOT}"
     PATH_SUFFIXES
         include
 )
@@ -20,7 +20,7 @@ find_library(LibEvent_LIBRARY
     NAMES
         ${LibEvent_LIBRARY_NAME}
     PATHS
-        "${LIBEVENT_ROOT}"
+        "${LibEvent_ROOT}"
     PATH_SUFFIXES
         lib
 )
@@ -76,5 +76,5 @@ endif()
 mark_as_advanced(LibEvent_INCLUDE_DIR LibEvent_LIBRARY_NAME LibEvent_LIBRARY LibEvent_VERSION_ACCEPTABLE)
 
 if(LibEvent_FOUND)
-    mark_as_advanced(LIBEVENT_ROOT)
+    mark_as_advanced(LibEvent_ROOT)
 endif()

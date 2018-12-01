@@ -1,12 +1,12 @@
 get_filename_component(LibSSH_MODULE_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-set(LIBSSH_ROOT "${LIBSSH_ROOT}" CACHE PATH "LibSSH root directory")
+set(LibSSH_ROOT "${LibSSH_ROOT}" CACHE PATH "LibSSH root directory")
 
 find_path(LibSSH_INCLUDE_DIR
     NAMES
         libssh/libssh.h      
     PATHS
-        "${LIBSSH_ROOT}"
+        "${LibSSH_ROOT}"
     PATH_SUFFIXES
         include
 )
@@ -20,7 +20,7 @@ find_library(LibSSH_LIBRARY
     NAMES
         ${LibSSH_LIBRARY_NAME}
     PATHS
-        "${LIBSSH_ROOT}"
+        "${LibSSH_ROOT}"
     PATH_SUFFIXES
         lib
 )
@@ -76,5 +76,5 @@ endif()
 mark_as_advanced(LibSSH_INCLUDE_DIR LibSSH_LIBRARY_NAME LibSSH_LIBRARY LibSSH_VERSION_ACCEPTABLE)
 
 if(LibSSH_FOUND)
-    mark_as_advanced(LIBSSH_ROOT)
+    mark_as_advanced(LibSSH_ROOT)
 endif()

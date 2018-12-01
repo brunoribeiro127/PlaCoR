@@ -31,6 +31,7 @@ namespace ssh
     protected:
         int _error_code;
         std::string _error;
+
     };
 
     class Session
@@ -54,6 +55,7 @@ namespace ssh
         ~Session()
         {
             ssh_free(_session);
+            _session = nullptr;
         }
 
         void SetOption(enum ssh_options_e type, void *option) const
@@ -118,7 +120,8 @@ namespace ssh
 
         ~Channel()
         {
-            //ssh_channel_free(_channel);
+            ssh_channel_free(_channel);
+            _channel = nullptr;
         }
 
         void OpenSession() const
@@ -201,6 +204,7 @@ namespace ssh
         ~Connector()
         {
             ssh_connector_free(_connector);
+            _connector = nullptr;
         }
 
         void SetInFD(socket_t fd) const
@@ -250,6 +254,7 @@ namespace ssh
         ~Event()
         {
             ssh_event_free(_event);
+            _event = nullptr;
         }
 
         void DoPoll(int timeout = -1) const
