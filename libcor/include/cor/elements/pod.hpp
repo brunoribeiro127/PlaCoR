@@ -28,8 +28,10 @@ friend class DynamicOrganizer;
 template <typename> friend class Value;
 template <typename> friend class Executor;
 friend class Mailbox;
-friend class Synchronizer;
 friend class StaticOrganizer;
+friend class SBarrier;
+friend class SMutex;
+friend class SRWMutex;
 
 public:
     explicit Pod(std::string const& app_group, std::string const& communicator, unsigned int npods);
@@ -38,6 +40,8 @@ public:
 
     void Initialize();
     void Finalize();
+
+    unsigned int GetTotalDomains();
 
     idp_t GetActiveResourceIdp();
     idp_t GetDomainIdp();

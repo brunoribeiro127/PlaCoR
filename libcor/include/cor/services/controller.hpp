@@ -45,6 +45,8 @@ public:
 
     ConsistencyObject *GetConsistencyObject(idp_t idp);
 
+    unsigned int GetTotalDomains();
+
     // not global function, only local domain
     idp_t GetDomainIdp(idp_t idp);
 

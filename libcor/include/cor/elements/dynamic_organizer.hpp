@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include "cereal/types/string.hpp"
 #include "cereal/types/map.hpp"
@@ -30,7 +31,9 @@ public:
     void Leave(idp_t idp);
 
     std::string const& GetModuleName() const;
+    
     size_t GetTotalMembers() const;
+    std::vector<idp_t> GetMemberList() const;
 
     idp_t GetIdp(idm_t idm) const;
     idp_t GetIdp(std::string const& name) const;

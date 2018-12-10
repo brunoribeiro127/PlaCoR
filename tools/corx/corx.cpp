@@ -27,15 +27,15 @@ int main(int argc, char *argv[])
 
     cor::Initialize(app_group, communicator, npods);
 
-    //{
+    {
         auto domain = gPod->Create<cor::Domain>(cor::MetaDomain, "", false, module);
 
-        auto comm = gPod->CreateCollective<cor::Communicator>(domain.GetIdp(), communicator, npods, false, communicator, npods, parent);
+        auto comm = gPod->CreateCollective<cor::Communicator>(domain->Idp(), communicator, npods, false, communicator, npods, parent);
 
-        auto agent = gPod->Create<cor::Agent<void(int,char**)>>(comm.GetIdp(), "", false, module, "Main");
+        auto agent = gPod->Create<cor::Agent<void(int,char**)>>(comm->Idp(), "", false, module, "Main");
         agent->Run(argc, argv);
         agent->Wait();
-    //}
+    }
 
     cor::Finalize();
 

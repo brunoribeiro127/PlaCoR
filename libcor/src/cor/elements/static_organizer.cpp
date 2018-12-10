@@ -71,8 +71,17 @@ void StaticOrganizer::Join(idp_t idp, std::string const& name)
 
 void StaticOrganizer::Leave(idp_t idp)
 {
-    // synchronize leave
-    //global::pod->SynchronizeCollectiveGroup(_comm);
+    // get consistency object
+    auto cobj = global::pod->GetConsistencyObject(_idp);
+
+    // acquire write
+    cobj->AcquireWrite();
+
+    // erase resource idp
+    _members.erase(idp);
+
+    // release write
+    cobj->ReleaseWrite();
 }
 
 idp_t StaticOrganizer::GetParent() const

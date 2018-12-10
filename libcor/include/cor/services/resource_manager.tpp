@@ -85,9 +85,6 @@ ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::stri
 
         // insert relationship of ancestry
         _predecessors.emplace(idp, ctx);
-
-        // initialize resource reference counter
-        _ref_cntrs.emplace(idp, 0);
     }
 
     //DummyInsertWorldContext(idp, name, rsc, ctrl);
@@ -168,7 +165,11 @@ void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
 template <typename T>
 ResourcePtr<T> ResourceManager::GetLocalResource(idp_t idp)
 {
-    return ResourcePtr<T>{this, idp};
+    auto cst_obj = _cst_objs.find(idp);
+    if (cst_obj == _cst_objs.end())
+        throw std::runtime_error("Resource " + std::to_string(idp) + " does not exist locally!");
+
+    return ResourcePtr<T>{cst_obj->second};
 }
 
 }

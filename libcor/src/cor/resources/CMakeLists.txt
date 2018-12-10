@@ -7,4 +7,5 @@ target_sources(
         "${CMAKE_CURRENT_LIST_DIR}/group.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/mutex.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/resource.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/rwmutex.cpp"
 )

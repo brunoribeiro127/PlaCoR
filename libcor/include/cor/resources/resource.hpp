@@ -21,6 +21,8 @@ public:
     Resource(Resource&&) noexcept;
     Resource& operator=(Resource&&) noexcept;
 
+    idp_t Idp() const;
+
 protected:
     Resource(); // needed by cereal
     explicit Resource(idp_t idp);

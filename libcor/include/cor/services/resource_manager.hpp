@@ -30,6 +30,8 @@ public:
     ~ResourceManager();
 
     void CreateInitialContext(std::string const& ctrl);
+    void CleanInitialContext();
+
     void CreateMetaDomain(std::string const& ctrl);
 
     template <typename T, typename ... Args>
@@ -50,7 +52,7 @@ public:
     template <typename T>
     void CreateReplica(idp_t idp, std::string const& ctrl);
 
-    void InsertResourceReplica(idp_t idp, Resource *rsc, std::string const& ctrl);
+    void InsertResourceReplica(idp_t idp, Resource *rsc);
 
     ConsistencyObject *GetConsistencyObject(idp_t idp);
 
@@ -58,6 +60,8 @@ public:
 
     template <typename T>
     ResourcePtr<T> GetLocalResource(idp_t idp);
+
+    unsigned int GetTotalDomains();
 
     // not global function, only local domain
     idp_t GetDomainIdp(idp_t idp);
@@ -73,17 +77,18 @@ public:
     void SendGlobalResourceFound(idp_t idp, std::string const& ctrl);
     void GlobalResourceFound(idp_t idp);
 
-    void HandleJoinResourceGroup(idp_t idp, std::string requester);
+    void ReleaseReplica(idp_t idp, bool self);
+    void CheckReplica(idp_t idp, std::string requester);
 
     void CheckUpdate(idp_t idp, std::string requester);
-    void Update(idp_t idp, Resource *rsc, std::string replier);
+    void Update(idp_t idp, Resource *rsc);
 
     void Invalidate(idp_t idp, std::string requester);
 
     void CheckTokenUpdate(idp_t idp, std::string requester);
     void AcquireTokenUpdate(idp_t idp, Resource *rsc, std::string replier);
 
-    void TokenAck(idp_t idp, std::string const& requester);
+    void TokenAck(idp_t idp);
 
     // collective groups
     void CreateCollectiveGroup(std::string const& comm, unsigned int total_members);
@@ -105,11 +110,9 @@ public:
     ResourceManager& operator=(ResourceManager&&) = delete;
 
 protected:
-    // interface to ResourcePtr
-    void IncrementResourceReferenceCounter(idp_t idp);
-    void DecrementResourceReferenceCounter(idp_t idp);
-
     // interface to ConsistencyObject
+    void DeallocateResource(idp_t idp);
+
     void SendReplica(idp_t idp, Resource *rsc, std::string const& requester);
 
     void RequestUpdate(idp_t idp);
@@ -124,11 +127,12 @@ protected:
 
 private:
     void JoinResourceGroup(idp_t idp);
+    void LeaveResourceGroup(idp_t idp);
 
     idp_t GenerateIdp();
 
     // to improve
-    void DummyInsertWorldContext(idp_t idp, std::string const& name, Resource *rsc, std::string const& ctrl);
+    //void DummyInsertWorldContext(idp_t idp, std::string const& name, Resource *rsc, std::string const& ctrl);
 
     Controller *_ctrl;
     Mailer *_mlr;
@@ -136,7 +140,6 @@ private:
 
     std::mutex _mtx;
 
-    std::map<idp_t, std::uint16_t> _ref_cntrs;
     std::map<idp_t, ConsistencyObject*> _cst_objs;
     std::map<idp_t, idp_t> _predecessors;
 
@@ -147,6 +150,8 @@ private:
     std::map<std::string, std::pair<unsigned int, unsigned int>> _cg_vars;
     std::map<std::string, std::condition_variable> _cg_cv;
     
+    std::map<idp_t, std::condition_variable> _sync_free;
+
 };
 
 }

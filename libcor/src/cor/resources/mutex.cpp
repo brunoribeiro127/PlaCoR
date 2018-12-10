@@ -4,7 +4,7 @@ namespace cor {
 
 Mutex::Mutex() = default;
 
-Mutex::Mutex(idp_t idp) : Resource{idp}, Synchronizer{idp} {}
+Mutex::Mutex(idp_t idp) : Resource{idp}, SMutex{idp} {}
 
 Mutex::~Mutex() = default;
 

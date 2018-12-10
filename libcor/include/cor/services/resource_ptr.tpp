@@ -4,70 +4,72 @@ namespace cor {
 
 template <typename T>
 ResourcePtr<T>::ResourcePtr() :
-    _rsc_mgr{nullptr},
-    _idp{0}
+    _cst_obj{nullptr}
 {}
 
 template <typename T>
-ResourcePtr<T>::ResourcePtr(ResourceManager *rsc_mgr, idp_t idp) :
-    _rsc_mgr(rsc_mgr),
-    _idp(idp)
+ResourcePtr<T>::ResourcePtr(ConsistencyObject *cst_obj) :
+    _cst_obj{cst_obj}
 {
-    // increment resource reference counter
-    if (_rsc_mgr != nullptr)
-        _rsc_mgr->IncrementResourceReferenceCounter(_idp);
+    if (_cst_obj != nullptr)
+        _cst_obj->IncrementLocalReferenceCounter();
 }
 
 template <typename T>
 ResourcePtr<T>::~ResourcePtr()
 {
-    // decrement resource reference counter
-    if (_rsc_mgr != nullptr)
-        _rsc_mgr->DecrementResourceReferenceCounter(_idp);
+    if (_cst_obj != nullptr)
+        _cst_obj->DecrementLocalReferenceCounter();
 }
 
 template <typename T>
 ResourcePtr<T>::ResourcePtr(ResourcePtr<T> const& other) noexcept :
-    _rsc_mgr(other._rsc_mgr),
-    _idp(other._idp)
+    _cst_obj{other._cst_obj}
 {
-    if (_rsc_mgr != nullptr)
-        _rsc_mgr->IncrementResourceReferenceCounter(_idp);
+    if (_cst_obj != nullptr)
+        _cst_obj->IncrementLocalReferenceCounter();
 }
 
 template <typename T>
-ResourcePtr<T>& ResourcePtr<T>::operator=(ResourcePtr<T> const& other) noexcept = default;
+ResourcePtr<T>& ResourcePtr<T>::operator=(ResourcePtr<T> const& other) noexcept
+{
+    _cst_obj = other._cst_obj;
+    other._cst_obj = nullptr;
+    return *this;
+}
 
 template <typename T>
 ResourcePtr<T>::ResourcePtr(ResourcePtr<T>&& other) noexcept :
-    _rsc_mgr(other._rsc_mgr),
-    _idp(other._idp)
+    _cst_obj{other._cst_obj}
 {
-    if (_rsc_mgr != nullptr)    
-        _rsc_mgr->IncrementResourceReferenceCounter(_idp);
+    if (_cst_obj != nullptr)
+        _cst_obj->IncrementLocalReferenceCounter();
 }
 
 template <typename T>
-ResourcePtr<T>& ResourcePtr<T>::operator=(ResourcePtr&& other) noexcept = default;
+ResourcePtr<T>& ResourcePtr<T>::operator=(ResourcePtr&& other) noexcept
+{
+    _cst_obj = other._cst_obj;
+    other._cst_obj = nullptr;
+    return *this;
+}
 
 template <typename T>
 T* ResourcePtr<T>::operator->() const
 {
-    // protect against nullptr
-    return dynamic_cast<T*>(_rsc_mgr->GetResource(_idp));
+    if (_cst_obj == nullptr)
+        throw std::runtime_error("Access to an invalid resource!");
+
+    return dynamic_cast<T*>(_cst_obj->GetResource());
 }
 
 template <typename T>
 T& ResourcePtr<T>::operator*() const
 {
-    // protect against nullptr
-    return *(dynamic_cast<T*>(_rsc_mgr->GetResource(_idp)));
-}
+    if (_cst_obj == nullptr)
+        throw std::runtime_error("Access to an invalid resource!");
 
-template <typename T>
-idp_t ResourcePtr<T>::GetIdp() const
-{
-    return _idp;
+    return *(dynamic_cast<T*>(_cst_obj->GetResource()));
 }
 
 }

@@ -2,13 +2,13 @@
 #define COR_MUTEX_HPP
 
 #include "cor/resources/resource.hpp"
-#include "cor/elements/synchronizer.hpp"
+#include "cor/elements/smutex.hpp"
 
 #include "cereal/types/polymorphic.hpp"
 
 namespace cor {
 
-class Mutex: public Resource, public Synchronizer
+class Mutex: public Resource, public SMutex
 {
 
 friend class ResourceManager;
@@ -31,7 +31,7 @@ private:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(cereal::base_class<Resource>(this), cereal::base_class<Synchronizer>(this));
+        ar(cereal::base_class<Resource>(this), cereal::base_class<SMutex>(this));
     }
 
 };

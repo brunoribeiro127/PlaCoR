@@ -20,7 +20,6 @@ ResourceManager::ResourceManager(Controller *ctrl, Mailer *mlr, bool first) :
     _ctrl{ctrl},
     _mlr{mlr},
     _is_main_mgr{first},
-    _ref_cntrs{},
     _cst_objs{},
     _sync_replicas{},
     _predecessors{},
@@ -35,6 +34,20 @@ void ResourceManager::CreateInitialContext(std::string const& ctrl)
         CreateMetaDomain(ctrl);
     else
         CreateReplica<Domain>(cor::MetaDomain, ctrl);
+}
+
+void ResourceManager::CleanInitialContext()
+{
+    //std::cout << "<" << _ctrl->GetName() << "> CLEAN INITIAL CONTEXT" << std::endl;
+
+    //_ctrl->LeaveResourceGroup(cor::MetaDomain);
+/*
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+
+        std::cout << "--->>> " << std::to_string(_cst_objs.size()) << "\t" << std::to_string(_predecessors.size()) << std::endl;
+    }
+*/
 }
 
 void ResourceManager::CreateMetaDomain(std::string const& ctrl)
@@ -64,9 +77,6 @@ void ResourceManager::CreateMetaDomain(std::string const& ctrl)
 
         // insert relationship of ancestry
         _predecessors.emplace(cor::MetaDomain, cor::MetaDomain);
-
-        // initialize resource reference counter
-        _ref_cntrs.emplace(cor::MetaDomain, 0);
     }
 
     // self join of meta-domain resource
@@ -75,7 +85,7 @@ void ResourceManager::CreateMetaDomain(std::string const& ctrl)
     SendResourceAllocationInfo(cor::MetaDomain);
 }
 
-void ResourceManager::InsertResourceReplica(idp_t idp, Resource *rsc, std::string const& ctrl)
+void ResourceManager::InsertResourceReplica(idp_t idp, Resource *rsc)
 {
     // if the resource has a mailbox, create a mailbox in mailer for the resource
     if (dynamic_cast<Mailbox*>(rsc) != nullptr || dynamic_cast<StaticOrganizer*>(rsc))
@@ -86,10 +96,7 @@ void ResourceManager::InsertResourceReplica(idp_t idp, Resource *rsc, std::strin
         std::lock_guard<std::mutex> lk(_mtx);
 
         // update replica validity
-        _cst_objs.at(idp)->AcquireReplica(rsc, ctrl);
-
-        // initialize resource reference counter
-        _ref_cntrs.emplace(idp, 0);
+        _cst_objs.at(idp)->AcquireReplica(rsc);
 
         // notify waiting threads that the replica has been created
         _sync_replicas[idp].notify_all();
@@ -104,16 +111,22 @@ Resource *ResourceManager::GetResource(idp_t idp)
 
 ConsistencyObject *ResourceManager::GetConsistencyObject(idp_t idp)
 {
-    // lock to access resource manager variables
     std::lock_guard<std::mutex> lk(_mtx);
 
     // return consistency object of resource idp
     return _cst_objs.at(idp);
 }
 
+unsigned int ResourceManager::GetTotalDomains()
+{
+    auto rsc = GetResource(cor::MetaDomain);
+    auto meta_domain = dynamic_cast<Domain*>(rsc);
+    auto total_members = meta_domain->GetTotalMembers();
+    return total_members - 1;
+}
+
 idp_t ResourceManager::GetDomainIdp(idp_t idp)
 {
-    // lock to access resource manager variables
     std::unique_lock<std::mutex> lk(_mtx); // shared_lock
 
     auto ret = idp;
@@ -146,7 +159,6 @@ void ResourceManager::FindGlobalResource(idp_t idp)
 
 void ResourceManager::HandleFindGlobalResource(idp_t idp, std::string ctrl)
 {
-    // lock to access resource manager variables
     std::unique_lock<std::mutex> lk(_mtx); // shared_lock
 
     // if resource exists, then send find resource reply
@@ -168,7 +180,43 @@ void ResourceManager::GlobalResourceFound(idp_t idp)
         _sync_gfind[idp].notify_all();
 }
 
-void ResourceManager::HandleJoinResourceGroup(idp_t idp, std::string requester)
+void ResourceManager::DeallocateResource(idp_t idp)
+{
+/*
+    std::unique_lock<std::mutex> lk(_mtx);
+
+    auto ctx = _predecessors.at(idp);
+
+    auto ctx_cst_obj = _cst_objs.find(ctx);
+    if (ctx != cor::MetaDomain && ctx_cst_obj != _cst_objs.end()) {
+
+        auto ctx_rsc = ctx_cst_obj->second->GetResource();
+
+        lk.unlock();
+
+        auto dorg = dynamic_cast<DynamicOrganizer*>(ctx_rsc);
+        if (dorg != nullptr)
+            dorg->Leave(idp);
+
+        lk.lock();
+    }
+
+    auto rsc_cst_obj = _cst_objs.at(idp);
+
+    _cst_objs.erase(idp);
+    _predecessors.erase(idp);
+
+    delete rsc_cst_obj;
+*/
+    //std::cout << "<" << _ctrl->GetName() << "> DEALLOCATE RESOURCE " << std::to_string(idp) << std::endl;
+}
+
+void ResourceManager::ReleaseReplica(idp_t idp, bool self)
+{
+    GetConsistencyObject(idp)->ReleaseReplica(self);
+}
+
+void ResourceManager::CheckReplica(idp_t idp, std::string requester)
 {
     GetConsistencyObject(idp)->CheckReplica(requester);
 }
@@ -193,9 +241,9 @@ void ResourceManager::ReplyUpdate(idp_t idp, Resource *rsc, std::string const& r
     _ctrl->SendUpdateReply(idp, rsc, requester);
 }
 
-void ResourceManager::Update(idp_t idp, Resource *rsc, std::string replier)
+void ResourceManager::Update(idp_t idp, Resource *rsc)
 {
-    GetConsistencyObject(idp)->Update(rsc, replier);
+    GetConsistencyObject(idp)->Update(rsc);
 }
 
 void ResourceManager::RequestInvalidate(idp_t idp)
@@ -233,34 +281,19 @@ void ResourceManager::SendTokenAck(idp_t idp, std::string const& replier)
     _ctrl->SendTokenAck(idp, replier);
 }
 
-void ResourceManager::TokenAck(idp_t idp, std::string const& requester)
+void ResourceManager::TokenAck(idp_t idp)
 {
-    GetConsistencyObject(idp)->TokenAck(requester);
-}
-
-void ResourceManager::IncrementResourceReferenceCounter(idp_t idp)
-{
-    // lock to access resource manager variables
-    std::lock_guard<std::mutex> lk(_mtx);
-
-    // increment resource reference counter
-    ++_ref_cntrs[idp];
-    //std::cout << "REF COUNT " << idp << " -> " << _ref_cntrs[idp] << "\n";
-}
-
-void ResourceManager::DecrementResourceReferenceCounter(idp_t idp)
-{
-    // lock to access resource manager variables
-    std::lock_guard<std::mutex> lk(_mtx);
-
-    // decrement resource reference counter
-    --_ref_cntrs[idp];
-    //std::cout << "REF COUNT " << idp << " -> " << _ref_cntrs[idp] << "\n";
+    GetConsistencyObject(idp)->TokenAck();
 }
 
 void ResourceManager::JoinResourceGroup(idp_t idp)
 {
     _ctrl->JoinResourceGroup(idp);
+}
+
+void ResourceManager::LeaveResourceGroup(idp_t idp)
+{
+    _ctrl->LeaveResourceGroup(idp);
 }
 
 void ResourceManager::CreateCollectiveGroup(std::string const& comm, unsigned int total_members)
@@ -312,24 +345,20 @@ void ResourceManager::SynchronizeCollectiveGroup(std::string const& comm)
     
     {
         std::unique_lock<std::mutex> lk(_mtx);
-        //std::cout << "BEGIN SynchronizeCollectiveGroup" << std::endl;
         while (std::get<0>(_cg_vars.at(comm)) != std::get<1>(_cg_vars.at(comm)))
             _cg_cv.at(comm).wait(lk);
         std::get<0>(_cg_vars.at(comm)) = 0;
-        //std::cout << "END SynchronizeCollectiveGroup" << std::endl;
     }
 }
 
 void ResourceManager::HandleSynchronizeCollectiveGroup(std::string const& comm)
 {
     std::unique_lock<std::mutex> lk(_mtx);
-    //std::cout << "BEGIN HandleSynchronizeCollectiveGroup" << std::endl;
 
     std::get<0>(_cg_vars.at(comm)) += 1;
 
     if (std::get<0>(_cg_vars.at(comm)) == std::get<1>(_cg_vars.at(comm)))
         _cg_cv.at(comm).notify_one();
-    //std::cout << "END HandleSynchronizeCollectiveGroup" << std::endl;
 }
 
 void ResourceManager::SendCollectiveGroupIdp(std::string const& comm, idp_t idp)
@@ -372,6 +401,7 @@ idp_t ResourceManager::GenerateIdp()
     return _ctrl->GenerateIdp();
 }
 
+/*
 void ResourceManager::DummyInsertWorldContext(idp_t idp, std::string const& name, Resource *rsc, std::string const& ctrl)
 {
     if (dynamic_cast<Domain*>(rsc) != nullptr) {
@@ -387,5 +417,6 @@ void ResourceManager::DummyInsertWorldContext(idp_t idp, std::string const& name
     auto rsc_world = GetLocalResource<cor::Group>(cor::ResourceWorld);
     rsc_world->Join(idp, name);
 }
+*/
 
 }

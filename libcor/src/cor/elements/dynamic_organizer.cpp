@@ -57,14 +57,17 @@ void DynamicOrganizer::Join(idp_t idp, std::string const& name)
 
 void DynamicOrganizer::Leave(idp_t idp)
 {
-    
-}
+    // get consistency object
+    auto cobj = global::pod->GetConsistencyObject(_idp);
 
-void DynamicOrganizer::LoadModule() const
-{
-    // if has a module, then load it
-    if (!_module.empty())
-        global::pod->LoadModule(_module);
+    // acquire write
+    cobj->AcquireWrite();
+
+    // erase resource idp
+    _members.erase(idp);
+
+    // release write
+    cobj->ReleaseWrite();
 }
 
 std::string const& DynamicOrganizer::GetModuleName() const
@@ -86,6 +89,25 @@ size_t DynamicOrganizer::GetTotalMembers() const
     cobj->ReleaseRead();
 
     return size;
+}
+
+std::vector<idp_t> DynamicOrganizer::GetMemberList() const
+{
+    std::vector<idp_t> list;
+
+    // get consistency object
+    auto cobj = global::pod->GetConsistencyObject(_idp);
+    
+    // acquire read
+    cobj->AcquireRead();
+
+    for (auto const& member: _members)
+        list.push_back(member.first);
+
+    // release read
+    cobj->ReleaseRead();
+
+    return list;
 }
 
 idp_t DynamicOrganizer::GetIdp(idm_t idm) const
@@ -180,6 +202,13 @@ idm_t DynamicOrganizer::GetIdm(std::string const& name) const
     } else {
         throw std::runtime_error("Resource with name <" + name + "> does not exist!");
     }
+}
+
+void DynamicOrganizer::LoadModule() const
+{
+    // if has a module, then load it
+    if (!_module.empty())
+        global::pod->LoadModule(_module);
 }
 
 }

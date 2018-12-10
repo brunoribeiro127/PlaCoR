@@ -9,7 +9,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 #include "host_file_parser.hpp"
-#include "session_manager.hpp"
+#include "cor/services/session_manager.hpp"
 
 std::string random_string(std::size_t length);
 
@@ -28,9 +28,10 @@ int main(int argc, char const *argv[])
         options.add_options()
             ("version", "Print version")
             ("help", "Print help message")
+            ("debug", "Print debug info")
             ("np", po::value<int>(&np)->default_value(1), "Number of pods")
             ("appgroup", po::value<std::string>(&app_group)->default_value(random_string(10)), "Application group name")
-            ("hostfile", po::value<std::string>(&host_file)->default_value("hostfile.conf"), "Provide a file with a list of hosts")
+            ("hostfile", po::value<std::string>(&host_file)->default_value(""), "Provide a file with a list of hosts")
             ("module", po::value<std::string>(&module)->default_value("a.out"), "Module name")
             ("args", po::value<std::vector<std::string>>(&args), "Module main function arguments")
             ;
@@ -56,26 +57,33 @@ int main(int argc, char const *argv[])
             return EXIT_SUCCESS;
         }
 
-        // insert full path to hostfile and module
-        host_file.insert(0, "/");
-        host_file.insert(0, fs::current_path().native());
+        if (!host_file.empty()) {
+            // insert full path to host_file and parse it
+            host_file.insert(0, "/");
+            host_file.insert(0, fs::current_path().native());
+            HostFileParser::parse(host_file, hosts);
+        } else {
+            hosts.emplace_back("localhost", "22", "4803");
+        }
 
+        // insert full path to module
         module.insert(0, "/");
         module.insert(0, fs::current_path().native());
 
-        HostFileParser::parse(host_file, hosts);
-
-        // Print program options
-        std::cout << "Number of pods: " << np << "\n";
-        std::cout << "Application group: " << app_group << "\n";
-        std::cout << "Host file: " << host_file << "\n";
-        for (auto const& host: hosts)
-            std::cout << std::get<0>(host) << "\t" << std::get<1>(host) << "\t" << std::get<2>(host) << "\n";
-        std::cout << "Module: " << module << "\n";
-        std::cout << "Args: ";
-        for (auto const& arg: args)
-            std::cout << arg << " ";
-        std::cout << "\n";
+        if (vm.count("debug")) {
+            // Print program options
+            std::cout << "Number of pods: " << np << "\n";
+            std::cout << "Application group: " << app_group << "\n";
+            std::cout << "Host file: " << host_file << "\n";
+            for (auto const& host: hosts)
+                std::cout << std::get<0>(host) << "\t" << std::get<1>(host) << "\t" << std::get<2>(host) << "\n";
+            std::cout << "Module: " << module << "\n";
+            std::cout << "Args: ";
+            for (auto const& arg: args)
+                std::cout << arg << " ";
+            std::cout << "\n";
+            return EXIT_SUCCESS;
+        }
 
     } catch (std::exception& ex) {
         std::cerr << "Error: " << ex.what() << "\n";
@@ -92,16 +100,15 @@ int main(int argc, char const *argv[])
     cmd.append(" ");
     cmd.append(std::to_string(np));
     cmd.append(" ");
+    cmd.append(std::to_string(0));
+    cmd.append(" ");
     cmd.append(module);
     for (int i = 0; i < args.size(); ++i) {
         cmd.append(" ");
         cmd.append(args[i]);
     }
 
-    std::cout << cmd << std::endl;
-
-    auto sm = new SessionManager();
-    sm->StartService();
+    auto sm = new cor::SessionManager();
 
     // Start sessions
     for (int i = 0; i < np; ++i) {

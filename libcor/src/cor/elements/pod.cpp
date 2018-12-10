@@ -37,6 +37,11 @@ void Pod::Finalize()
     _mlr->StopService();
 }
 
+unsigned int Pod::GetTotalDomains()
+{
+    return _ctrl->GetTotalDomains();
+}
+
 idp_t Pod::GetActiveResourceIdp()
 {
     std::unique_lock<std::mutex> lk(_mtx); // shared_lock

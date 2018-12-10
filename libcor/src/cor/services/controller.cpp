@@ -68,17 +68,23 @@ void Controller::StartService()
     // initialize global context
     Initialize();
 
+    // create page manager initial context
+    _pg_mgr->CreateInitialContext();
+
+    // create resource manager initial context
+    _rsc_mgr->CreateInitialContext(GetName());
+
     // intialize comm context
     InitializeContext();
 }
 
 void Controller::StopService()
 {
-    // stop service resource manager
-    //_rsc_mgr->;
-
     // finalize comm context
     FinalizeContext();
+
+    // delete service resource manager
+    _rsc_mgr->CleanInitialContext();
 
     // finalize synchronous
     Finalize();
@@ -101,6 +107,11 @@ idp_t Controller::GenerateIdp()
 ConsistencyObject *Controller::GetConsistencyObject(idp_t idp)
 {
     return _rsc_mgr->GetConsistencyObject(idp);
+}
+
+unsigned int Controller::GetTotalDomains()
+{
+    return _rsc_mgr->GetTotalDomains();
 }
 
 idp_t Controller::GetDomainIdp(idp_t idp)
@@ -133,7 +144,7 @@ idp_t Controller::Spawn(std::string const& comm, unsigned int npods, idp_t paren
         cmd.append(args[i]);
     }
 
-    std::cout << cmd << std::endl;
+    //std::cout << cmd << std::endl;
 
     // spawn pods
     for (int i = 0; i < npods; ++i) {
@@ -186,10 +197,9 @@ void Controller::HandleMessage()
                     if (IsResourceGroup(group)) {
 
                         auto idp = GetIdpFromResourceGroup(group);
-                        //std::cout << "JOIN GROUP RESOURCE <" << idp << ">" << std::endl;
 
                         if (_groups.size() > 1) {
-                            std::thread t(&ResourceManager::HandleJoinResourceGroup, _rsc_mgr, idp, ctrl);
+                            std::thread t(&ResourceManager::CheckReplica, _rsc_mgr, idp, ctrl);
                             t.detach();
                         }
                     }
@@ -197,6 +207,19 @@ void Controller::HandleMessage()
                 } else if (_info.caused_by_leave()) {
                     // this message is received by the controllers of the group in which a member left
                     //std::cout << "Due to the LEAVE of " << _info.changed_member() << "\n";
+
+                    auto group = _smsg.sender();
+
+                    // resource group leave
+                    if (IsResourceGroup(group)) {
+                        
+                        //std::cout << "LEAVE FROM RESOURCE GROUP <" << group << ">" << std::endl;
+                        auto idp = GetIdpFromResourceGroup(group);
+
+                        std::thread t(&ResourceManager::ReleaseReplica, _rsc_mgr, idp, false);
+                        t.detach();
+                    }
+
                 } else if (_info.caused_by_disconnect()) {
                     // this message is received by the controllers of the group in which a member disconnected
                     //std::cout << "Due to the DISCONNECT of " << _info.changed_member() << "\n";
@@ -218,6 +241,17 @@ void Controller::HandleMessage()
                     _evread->end();
                     _base->loop_break();
                 }
+
+                // resource group leave
+                if (IsResourceGroup(group)) {
+
+                    //std::cout << "SELF LEAVE FROM RESOURCE GROUP <" << group << ">" << std::endl;
+                    auto idp = GetIdpFromResourceGroup(group);
+
+                    std::thread t(&ResourceManager::ReleaseReplica, _rsc_mgr, idp, true);
+                    t.detach();
+                }
+
             }
         }
         // unkown type of message
@@ -314,12 +348,6 @@ void Controller::Initialize()
     _pg_mgr = new PageManager(this, _is_main_ctrl);
     _rsc_mgr = new ResourceManager(this, _mlr, _is_main_ctrl);
     _sess_mgr = new SessionManager();
-
-    // create page manager initial context
-    _pg_mgr->CreateInitialContext();
-
-    // create resource manager initial context
-    _rsc_mgr->CreateInitialContext(GetName());
 }
 
 void Controller::HandleInitialize()
@@ -617,8 +645,6 @@ void Controller::HandleCreateReplica()
     idp_t idp;
     std::unique_ptr<Resource> aux;
 
-    auto ctrl = _smsg.sender();
-
     {
         std::string sobj(_msg.begin(), _msg.size());
         std::istringstream iss(sobj, std::istringstream::binary);
@@ -628,7 +654,7 @@ void Controller::HandleCreateReplica()
 
     auto rsc = aux.release();
 
-    std::thread t(&ResourceManager::InsertResourceReplica, _rsc_mgr, idp, rsc, ctrl);
+    std::thread t(&ResourceManager::InsertResourceReplica, _rsc_mgr, idp, rsc);
     t.detach();
 }
 
@@ -687,7 +713,6 @@ void Controller::HandleUpdateReply()
 {
     idp_t idp;
     std::unique_ptr<Resource> aux;
-    auto ctrl = _smsg.sender();
 
     {
         std::string sobj(_msg.begin(), _msg.size());
@@ -698,7 +723,7 @@ void Controller::HandleUpdateReply()
 
     auto rsc = aux.release();
 
-    std::thread t(&ResourceManager::Update, _rsc_mgr, idp, rsc, ctrl);
+    std::thread t(&ResourceManager::Update, _rsc_mgr, idp, rsc);
     t.detach();
 }
 
@@ -826,8 +851,6 @@ void Controller::HandleTokenAck()
 {
     idp_t idp;
 
-    auto ctrl = _smsg.sender();
-
     {
         std::string sobj(_msg.begin(), _msg.size());
         std::istringstream iss(sobj, std::istringstream::binary);
@@ -835,7 +858,7 @@ void Controller::HandleTokenAck()
         iarchive(idp);
     }
 
-    std::thread t(&ResourceManager::TokenAck, _rsc_mgr, idp, ctrl);
+    std::thread t(&ResourceManager::TokenAck, _rsc_mgr, idp);
     t.detach();
 }
 
