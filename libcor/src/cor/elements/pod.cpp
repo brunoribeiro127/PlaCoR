@@ -6,7 +6,7 @@ using namespace dll;
 
 namespace cor {
 
-Pod::Pod(std::string const& app_group, std::string const& communicator, unsigned int npods) :
+Pod::Pod(std::string const& app_group, std::string const& context, unsigned int npods) :
     _mlr{nullptr},
     _ctrl{nullptr},
     _modules{},
@@ -14,8 +14,9 @@ Pod::Pod(std::string const& app_group, std::string const& communicator, unsigned
 {
     // create a local instance of controller and mailer
     _mlr = new Mailer{app_group};
-    _ctrl = new Controller{app_group, communicator, npods, _mlr};
+    _ctrl = new Controller{app_group, context, npods, _mlr};
 }
+
 
 Pod::~Pod()
 {
@@ -35,6 +36,21 @@ void Pod::Finalize()
     // stop controller and mailer services
     _ctrl->StopService();
     _mlr->StopService();
+}
+
+std::string const& Pod::GetGlobalContext()
+{
+    return _ctrl->GetGlobalContext();
+}
+
+std::string const& Pod::GetLocalContext()
+{
+    return _ctrl->GetLocalContext();
+}
+
+unsigned int Pod::GetTotalPods()
+{    
+    return _ctrl->GetTotalPods();
 }
 
 unsigned int Pod::GetTotalDomains()
@@ -64,10 +80,10 @@ idp_t Pod::GetPredecessorIdp(idp_t idp)
     return _ctrl->GetPredecessorIdp(idp);
 }
 
-idp_t Pod::Spawn(std::string const& comm, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
+idp_t Pod::Spawn(std::string const& context, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
 {
     auto parent = GetActiveResourceIdp();
-    return _ctrl->Spawn(comm, npods, parent, module, args, hosts);
+    return _ctrl->Spawn(context, npods, parent, module, args, hosts);
 }
 
 idp_t Pod::GenerateIdp()
@@ -134,9 +150,14 @@ Message Pod::ReceiveMessage(idp_t idp, idp_t source)
     return _mlr->ReceiveMessage(idp, source);
 }
 
-void Pod::SynchronizeCollectiveGroup(std::string const& comm)
+void Pod::CreateStaticGroup(idp_t comm, unsigned int total_members)
 {
-    _ctrl->SynchronizeCollectiveGroup(comm);
+    _ctrl->CreateStaticGroup(comm, total_members);
+}
+
+void Pod::SynchronizeStaticGroup(idp_t comm)
+{
+    _ctrl->SynchronizeStaticGroup(comm);
 }
 
 }

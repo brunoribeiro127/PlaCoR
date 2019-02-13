@@ -7,7 +7,7 @@
 
 namespace cor {
 
-    void Initialize(std::string const& app_group, std::string const& communicator, unsigned int npods);
+    void Initialize(std::string const& app_group, std::string const& context, unsigned int npods);
 
     void Finalize();
 

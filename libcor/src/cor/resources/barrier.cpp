@@ -4,7 +4,7 @@ namespace cor {
 
 Barrier::Barrier() = default;
 
-Barrier::Barrier(idp_t idp, std::string const& comm) : Resource{idp}, SBarrier{idp, comm} {}
+Barrier::Barrier(idp_t idp, idp_t comm) : Resource{idp}, SBarrier{idp, comm} {}
 
 Barrier::~Barrier() = default;
 

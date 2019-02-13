@@ -29,9 +29,9 @@ public:
 
     std::size_t Size() const;
     void Clear();
-    
-    void SetType(std::uint16_t type);
+
     std::uint16_t Type() const;
+    void SetType(std::uint16_t type);
 
     idp_t Sender() const;
     void SetSender(idp_t sender);

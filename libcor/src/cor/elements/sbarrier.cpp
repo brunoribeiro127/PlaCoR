@@ -7,7 +7,7 @@ namespace cor {
 
 SBarrier::SBarrier() = default;
 
-SBarrier::SBarrier(idp_t idp, std::string const& comm) :
+SBarrier::SBarrier(idp_t idp, idp_t comm) :
     _idp{idp},
     _comm{comm}
 {}
@@ -20,7 +20,7 @@ SBarrier& SBarrier::operator=(SBarrier&&) noexcept = default;
 
 void SBarrier::Synchronize()
 {
-    global::pod->SynchronizeCollectiveGroup(_comm);
+    global::pod->SynchronizeStaticGroup(_comm);
 }
 
 }

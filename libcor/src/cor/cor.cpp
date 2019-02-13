@@ -5,9 +5,9 @@
 
 namespace cor {
 
-void Initialize(std::string const& app_group, std::string const& communicator, unsigned int npods)
+void Initialize(std::string const& app_group, std::string const& context, unsigned int npods)
 {
-    global::pod = new Pod{app_group, communicator, npods};
+    global::pod = new Pod{app_group, context, npods};
     global::pod->Initialize();
 }
 

@@ -10,9 +10,8 @@ namespace cor {
 
 StaticOrganizer::StaticOrganizer() = default;
 
-StaticOrganizer::StaticOrganizer(idp_t idp, std::string const& comm, unsigned int total_members, idp_t parent) :
+StaticOrganizer::StaticOrganizer(idp_t idp, unsigned int total_members, idp_t parent) :
     _idp{idp},
-    _comm{comm},
     _total_members{total_members},
     _parent{parent},
     _members{},
@@ -61,7 +60,7 @@ void StaticOrganizer::Join(idp_t idp, std::string const& name)
     cobj->ReleaseWrite();
 
     // Synchronize join
-    global::pod->SynchronizeCollectiveGroup(_comm);
+    global::pod->CreateStaticGroup(_idp, _total_members);
 
     if (idm == 0) {
         Message msg;

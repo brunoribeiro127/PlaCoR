@@ -27,7 +27,7 @@ public:
 
 protected:
     SBarrier();
-    explicit SBarrier(idp_t idp, std::string const& comm);
+    explicit SBarrier(idp_t idp, idp_t comm);
 
 private:
     template <typename Archive>
@@ -37,7 +37,7 @@ private:
     }
 
     idp_t _idp;
-    std::string _comm;
+    idp_t _comm;
 
 };
 

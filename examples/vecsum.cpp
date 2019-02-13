@@ -36,11 +36,11 @@ void Main(int argc, char *argv[])
 
     if (rank == MASTER) {
         std::vector<int> array;
-    
+
         for (int i = 1; i <= ARRAY_SIZE; ++i)
             array.push_back(i);
 
-        data = gPod->Create<Vector<int>>(gPod->GetDomainIdp(), "data", true, std::ref(array));
+        data = gPod->Create<Vector<int>>(gPod->GetDomainIdp(), "data", std::ref(array));
 
         cor::Message msg;
         msg.SetType(0);

@@ -16,8 +16,6 @@ class Domain: public Resource, public DynamicOrganizer
 friend class ResourceManager;
 friend class cereal::access;
 
-friend class ResourceManager; // to create meta-domain
-
 public:
     ~Domain();
 

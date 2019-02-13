@@ -5,13 +5,12 @@
 
 namespace cor {
 
-ConsistencyObject::ConsistencyObject(ResourceManager *rsc_mgr, idp_t idp, bool is_owner, bool global, std::function<void(Resource*, Resource*)> update_func, std::string const& ctrl) :
+ConsistencyObject::ConsistencyObject(ResourceManager *rsc_mgr, idp_t idp, bool is_owner, std::function<void(Resource*, Resource*)> update_func, std::string const& ctrl) :
     _rsc_mgr{rsc_mgr},
     _ctrl{ctrl},
     _rsc{nullptr},
     _local_ref_cntr{0},
-    _global_ref_cntr{is_owner},
-    _global{global},
+    _global_ref_cntr{1},
     _update_func{update_func},
     _reading{0},
     _writing{0},
@@ -144,21 +143,36 @@ void ConsistencyObject::AcquireReplica(Resource *rsc)
     _wreplica = false;
 }
 
-void ConsistencyObject::ReleaseReplica(bool self)
+void ConsistencyObject::ReleaseReplica(std::string const& requester)
 {
-    if (self) {
-        _rsc_mgr->DeallocateResource(_idp);
-    } else {
+    if (_ctrl == requester) {
+
         std::unique_lock<std::mutex> lk(_mtx);
-        if (_owner) {
-            --_global_ref_cntr;
-            if (!_local_ref_cntr && _global_ref_cntr == 1)
-                _rsc_mgr->LeaveResourceGroup(_idp);
+
+        std::cout << "ReleaseReplica 1 <" << _idp << ">" << std::endl;
+
+        _rsc_mgr->LeaveResourceGroup(_idp);
+
+    } else {
+
+        std::unique_lock<std::mutex> lk(_mtx);
+
+        std::cout << "ReleaseReplica 2 <" << _idp << ">" << std::endl;
+
+        --_global_ref_cntr;
+
+        if (!_local_ref_cntr) {
+            if (!_token || (_token && _global_ref_cntr == 1)) {
+                lk.unlock();
+                _rsc_mgr->DeallocateResource(_idp);
+                _rsc_mgr->RequestReleaseReplica(_idp);
+            }
         }
+
     }
 }
 
-void ConsistencyObject::CheckReplica(std::string const& requester)
+void ConsistencyObject::CheckReplica(unsigned int size, std::string const& requester)
 {
     if (_ctrl == requester) {
 
@@ -176,6 +190,8 @@ void ConsistencyObject::CheckReplica(std::string const& requester)
 
         // waiting for replica
         _wreplica = true;
+
+        _global_ref_cntr = size;
 
         // notify waiting requests
         _reqwq.notify_all();
@@ -197,8 +213,7 @@ void ConsistencyObject::CheckReplica(std::string const& requester)
         if (_token && _validity)
             _rsc_mgr->SendReplica(_idp, _rsc, requester);
 
-        if (_owner)
-            ++_global_ref_cntr;
+        _global_ref_cntr = size;
 
         // notify waiting requests
         _reqwq.notify_all();
@@ -271,6 +286,9 @@ void ConsistencyObject::CheckTokenUpdate(std::string const& requester)
 
             // reply token
             _rsc_mgr->ReplyTokenUpdate(_idp, _rsc, requester);
+
+            // notify possible release replica
+            _wfree.notify_one();
         }
 
         // notify waiting requests
@@ -278,17 +296,14 @@ void ConsistencyObject::CheckTokenUpdate(std::string const& requester)
     }
 }
 
-void ConsistencyObject::Invalidate(std::string const& requester)
+void ConsistencyObject::Invalidate()
 {
-    if (_ctrl != requester) {
 
-        // lock to access member variables
-        std::unique_lock<std::mutex> lk(_mtx);
+    // lock to access member variables
+    std::unique_lock<std::mutex> lk(_mtx);
 
-        // mark local replica as invalid
-        _validity = false;
-
-    }
+    // mark local replica as invalid
+    _validity = false;
 }
 
 void ConsistencyObject::Update(Resource *rsc)
@@ -377,13 +392,16 @@ void ConsistencyObject::DecrementLocalReferenceCounter()
 
     --_local_ref_cntr;
 
+    //std::cout << "<" << _idp << ">   " << _local_ref_cntr << "   " << _global_ref_cntr << std::endl;
+    /*
     if (!_local_ref_cntr) {
-        if (!_owner)
-            _rsc_mgr->LeaveResourceGroup(_idp);
-
-        if (_owner && _global_ref_cntr == 1)
-            _rsc_mgr->LeaveResourceGroup(_idp);
+        if (!_token || (_token && _global_ref_cntr == 1)) {
+            lk.unlock();
+            _rsc_mgr->DeallocateResource(_idp);
+            _rsc_mgr->RequestReleaseReplica(_idp);
+        }
     }
+    */
 }
 
 void ConsistencyObject::SetResource(Resource *rsc)

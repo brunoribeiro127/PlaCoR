@@ -1,8 +1,6 @@
 #ifndef COR_BARRIER_HPP
 #define COR_BARRIER_HPP
 
-#include <string>
-
 #include "cor/resources/resource.hpp"
 #include "cor/elements/sbarrier.hpp"
 
@@ -27,7 +25,7 @@ public:
 
 protected:
     Barrier();
-    explicit Barrier(idp_t idp, std::string const& comm);
+    explicit Barrier(idp_t idp, idp_t comm);
 
 private:
     template <typename Archive>

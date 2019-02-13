@@ -35,7 +35,7 @@ void Main(int argc, char *argv[])
         for (int i = 1; i <= ARRAY_SIZE; ++i)
             array.push_back(i);
 
-        data = gPod->Create<Vector<int>>(gPod->GetDomainIdp(), "data", true, std::ref(array));
+        data = gPod->Create<Vector<int>>(gPod->GetDomainIdp(), "data", std::ref(array));
 
         auto comm_idp = gPod->Spawn("test", NUM_AGENTS, "$HOME/placor/examples/libvecsum_spawn.dylib", {}, { "localhost" });
 

@@ -16,9 +16,9 @@ using namespace ev;
 
 namespace cor {
 
-Controller::Controller(std::string const& app_group, std::string const& communicator, unsigned int npods, Mailer *mlr) :
+Controller::Controller(std::string const& app_group, std::string const& context, unsigned int npods, Mailer *mlr) :
     _app_group{app_group},
-    _communicator{communicator},
+    _context{context},
     _npods{npods},
     _th_svc{},
     _is_main_ctrl{false},
@@ -109,6 +109,22 @@ ConsistencyObject *Controller::GetConsistencyObject(idp_t idp)
     return _rsc_mgr->GetConsistencyObject(idp);
 }
 
+std::string const& Controller::GetGlobalContext()
+{
+    return _app_group;
+}
+
+std::string const& Controller::GetLocalContext()
+{
+    return _context;
+}
+
+unsigned int Controller::GetTotalPods()
+{    
+    std::unique_lock<std::mutex> lk(_mtx);
+    return _init_total_npods;
+}
+
 unsigned int Controller::GetTotalDomains()
 {
     return _rsc_mgr->GetTotalDomains();
@@ -124,7 +140,7 @@ idp_t Controller::GetPredecessorIdp(idp_t idp)
     return _rsc_mgr->GetPredecessorIdp(idp);
 }
 
-idp_t Controller::Spawn(std::string const& comm, unsigned int npods, idp_t parent, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
+idp_t Controller::Spawn(std::string const& context, unsigned int npods, idp_t parent, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
 {
     // assemble command
     std::string cmd;
@@ -132,7 +148,7 @@ idp_t Controller::Spawn(std::string const& comm, unsigned int npods, idp_t paren
     cmd.append(" ");
     cmd.append(_app_group);
     cmd.append(" ");
-    cmd.append(comm);
+    cmd.append(context);
     cmd.append(" ");
     cmd.append(std::to_string(npods));
     cmd.append(" ");
@@ -191,15 +207,16 @@ void Controller::HandleMessage()
                     if (_app_group == group)
                         HandleInitialize();
 
-                    if (IsCommunicatorGroup(group))
+                    if (IsContextGroup(group))
                         HandleInitializeContext();
 
                     if (IsResourceGroup(group)) {
 
                         auto idp = GetIdpFromResourceGroup(group);
+                        auto size = _groups.size();
 
-                        if (_groups.size() > 1) {
-                            std::thread t(&ResourceManager::CheckReplica, _rsc_mgr, idp, ctrl);
+                        if (size > 1) {
+                            std::thread t(&ResourceManager::CheckReplica, _rsc_mgr, idp, size, ctrl);
                             t.detach();
                         }
                     }
@@ -207,18 +224,6 @@ void Controller::HandleMessage()
                 } else if (_info.caused_by_leave()) {
                     // this message is received by the controllers of the group in which a member left
                     //std::cout << "Due to the LEAVE of " << _info.changed_member() << "\n";
-
-                    auto group = _smsg.sender();
-
-                    // resource group leave
-                    if (IsResourceGroup(group)) {
-                        
-                        //std::cout << "LEAVE FROM RESOURCE GROUP <" << group << ">" << std::endl;
-                        auto idp = GetIdpFromResourceGroup(group);
-
-                        std::thread t(&ResourceManager::ReleaseReplica, _rsc_mgr, idp, false);
-                        t.detach();
-                    }
 
                 } else if (_info.caused_by_disconnect()) {
                     // this message is received by the controllers of the group in which a member disconnected
@@ -234,7 +239,6 @@ void Controller::HandleMessage()
                 // this message is received by the controller that left the group
                 //std::cout << "received membership message that left group " << _smsg.sender() << "\n";
 
-                //on self leave of app group stop service
                 auto group = _smsg.sender();
 
                 if (_app_group == group) {
@@ -242,13 +246,10 @@ void Controller::HandleMessage()
                     _base->loop_break();
                 }
 
-                // resource group leave
                 if (IsResourceGroup(group)) {
-
-                    //std::cout << "SELF LEAVE FROM RESOURCE GROUP <" << group << ">" << std::endl;
                     auto idp = GetIdpFromResourceGroup(group);
-
-                    std::thread t(&ResourceManager::ReleaseReplica, _rsc_mgr, idp, true);
+                    std::cout << "EraseResource <" << idp << ">" << std::endl;
+                    std::thread t(&ResourceManager::EraseResource, _rsc_mgr, idp);
                     t.detach();
                 }
 
@@ -292,6 +293,10 @@ void Controller::HandleRegularMessage()
             HandleCreateReplica();
             break;
 
+        case MsgType::ReleaseReplicaRequest:
+            HandleReleaseReplicaRequest();
+            break;
+
         case MsgType::UpdateRequest:
             HandleUpdateRequest();
             break;
@@ -315,17 +320,21 @@ void Controller::HandleRegularMessage()
         case MsgType::TokenAck:
             HandleTokenAck();
             break;
-
-        case MsgType::CollectiveGroupCreate:
-            HandleCollectiveGroupCreate();
+        
+        case MsgType::CreateCollectiveInit:
+            HandleCreateCollectiveInit();
             break;
 
-        case MsgType::CollectiveGroupSync:
-            HandleCollectiveGroupSync();
+        case MsgType::CreateCollectiveIdp:
+            HandleCreateCollectiveIdp();
             break;
 
-        case MsgType::CollectiveGroupIdp:
-            HandleCollectiveGroupIdp();
+        case MsgType::StaticGroupCreate:
+            HandleStaticGroupCreate();
+            break;
+
+        case MsgType::StaticGroupSynchronize:
+            HandleStaticGroupSynchronize();
             break;
 
         case MsgType::FinalizeContext:
@@ -368,7 +377,7 @@ void Controller::HandleInitialize()
 void Controller::InitializeContext()
 {
     // join communicator group
-    JoinCommunicatorGroup(_communicator);
+    JoinContextGroup(_context);
 
     {
         std::unique_lock<std::mutex> lk(_mtx);
@@ -394,7 +403,7 @@ void Controller::FinalizeContext()
     // build message
     msg.set_safe();
     msg.set_type(underlying_cast(MsgType::FinalizeContext));
-    dest.add(GetCommunicatorGroup(_communicator));
+    dest.add(GetContextGroup(_context));
 
     // send finalize message
     _mbox->send(msg, dest);
@@ -406,7 +415,7 @@ void Controller::FinalizeContext()
             _cv.wait(lk);
     }
 
-    LeaveCommunicatorGroup(_communicator);
+    LeaveContextGroup(_context);
 }
 
 void Controller::HandleFinalizeContext()
@@ -658,6 +667,32 @@ void Controller::HandleCreateReplica()
     t.detach();
 }
 
+void Controller::SendReleaseReplicaRequest(idp_t idp)
+{
+    ScatterMessage req;
+    GroupList dest;
+
+    // dsm group of the resource
+    std::string group = GetResourceGroup(idp);
+    
+    // build message
+    req.set_safe();
+    req.set_type(underlying_cast(MsgType::ReleaseReplicaRequest));
+    dest.add(group);
+
+    // send message
+    _mbox->send(req, dest);
+}
+
+void Controller::HandleReleaseReplicaRequest()
+{
+    auto idp = GetIdpFromResourceGroup(_groups[0]);
+    auto ctrl = _smsg.sender();
+
+    std::thread t(&ResourceManager::ReleaseReplica, _rsc_mgr, idp, ctrl);
+    t.detach();
+}
+
 void Controller::SendUpdateRequest(idp_t idp)
 {
     ScatterMessage req;
@@ -737,6 +772,7 @@ void Controller::SendInvalidateRequest(idp_t idp)
     
     // build message
     req.set_safe();
+    req.set_self_discard(); // SELF DISCARD INVALIDATE
     req.set_type(underlying_cast(MsgType::InvalidateRequest));
     dest.add(group);
 
@@ -747,10 +783,9 @@ void Controller::SendInvalidateRequest(idp_t idp)
 void Controller::HandleInvalidateRequest()
 {
     auto idp = GetIdpFromResourceGroup(_groups[0]);
-    auto ctrl = _smsg.sender();
 
     // invalidate resource
-    std::thread t(&ResourceManager::Invalidate, _rsc_mgr, idp, ctrl);
+    std::thread t(&ResourceManager::Invalidate, _rsc_mgr, idp);
     t.detach();
 }
 
@@ -862,22 +897,44 @@ void Controller::HandleTokenAck()
     t.detach();
 }
 
-void Controller::SendCollectiveGroupCreate(std::string const& comm)
+void Controller::InitCreateCollective(std::string const& context, unsigned int total_members)
+{
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    auto tid = ss.str();
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        _cc_first.emplace(std::piecewise_construct, std::forward_as_tuple(context, tid), std::forward_as_tuple());
+        _cc_vars.emplace(context, std::make_pair(0, total_members));
+        _cc_cv[context].notify_all();
+    }
+
+    SendCreateCollectiveInit(context, tid);
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        while (_cc_vars.at(context).first != _cc_vars.at(context).second)
+            _cc_cv[context].wait(lk);
+    }
+}
+
+void Controller::SendCreateCollectiveInit(std::string const& context, std::string const& tid)
 {
     ScatterMessage rep;
     GroupList dest;
 
-    auto group = GetCommunicatorGroup(comm);
+    auto group = GetContextGroup(context);
 
-    // serialize comm
+    // serialize tid
     std::ostringstream oss(std::stringstream::binary);
     cereal::PortableBinaryOutputArchive oarchive(oss);
-    oarchive(comm);
+    oarchive(tid);
     const std::string& tmp = oss.str();
 
     // build message
     rep.set_safe();
-    rep.set_type(underlying_cast(MsgType::CollectiveGroupCreate));
+    rep.set_type(underlying_cast(MsgType::CreateCollectiveInit));
     rep.add(tmp.c_str(), tmp.size());
     dest.add(group);
 
@@ -885,81 +942,60 @@ void Controller::SendCollectiveGroupCreate(std::string const& comm)
     _mbox->send(rep, dest);
 }
 
-void Controller::HandleCollectiveGroupCreate()
+void Controller::HandleCreateCollectiveInit()
 {
-    std::string comm;
-    bool self;
+    std::string tid;
+    auto context = GetContextFromContextGroup(_groups[0]);
 
     {
         std::string sobj(_msg.begin(), _msg.size());
         std::istringstream iss(sobj, std::istringstream::binary);
         cereal::PortableBinaryInputArchive iarchive(iss);
-        iarchive(comm);
+        iarchive(tid);
     }
 
-    if (_smsg.sender() == GetName())
-        self = true;
-    else
-        self = false;
+    auto local = (_smsg.sender() == GetName());
 
-    std::thread t(&ResourceManager::HandleCreateCollectiveGroup, _rsc_mgr, comm, self);
+    std::thread t(&Controller::HandleInitCreateCollective, this, context, tid, local);
     t.detach();
 }
 
-void Controller::SendCollectiveGroupSync(std::string const& comm)
+void Controller::HandleInitCreateCollective(std::string const& context, std::string const& tid, bool local)
 {
-    ScatterMessage rep;
-    GroupList dest;
+    std::unique_lock<std::mutex> lk(_mtx);
 
-    auto group = GetCommunicatorGroup(comm);
+    if (_cc_vars.find(context) == _cc_vars.end())
+        _cc_cv[context].wait(lk);
 
-    // serialize comm
-    std::ostringstream oss(std::stringstream::binary);
-    cereal::PortableBinaryOutputArchive oarchive(oss);
-    oarchive(comm);
-    const std::string& tmp = oss.str();
+    _cc_vars.at(context).first += 1;
 
-    // build message
-    rep.set_safe();
-    rep.set_type(underlying_cast(MsgType::CollectiveGroupSync));
-    rep.add(tmp.c_str(), tmp.size());
-    dest.add(group);
-
-    // send message
-    _mbox->send(rep, dest);
-}
-
-void Controller::HandleCollectiveGroupSync()
-{
-    std::string comm;
-
-    {
-        std::string sobj(_msg.begin(), _msg.size());
-        std::istringstream iss(sobj, std::istringstream::binary);
-        cereal::PortableBinaryInputArchive iarchive(iss);
-        iarchive(comm);
+    if (local) {
+        if (_cc_vars.at(context).first == 1)
+            _cc_first.at({context, tid}).set_value(true);
+        else
+            _cc_first.at({context, tid}).set_value(false);
     }
-    
-    _rsc_mgr->HandleSynchronizeCollectiveGroup(comm);
+
+    if (_cc_vars.at(context).first == _cc_vars.at(context).second)
+        _cc_cv[context].notify_all();
 }
 
-void Controller::SendCollectiveGroupIdp(std::string const& comm, idp_t idp)
+void Controller::SendCreateCollectiveIdp(std::string const& context, idp_t idp)
 {
     ScatterMessage rep;
     GroupList dest;
 
-    auto group = GetCommunicatorGroup(comm);
+    auto group = GetContextGroup(context);
 
     // serialize idp
     std::ostringstream oss(std::stringstream::binary);
     cereal::PortableBinaryOutputArchive oarchive(oss);
-    oarchive(comm, idp);
+    oarchive(idp);
     const std::string& tmp = oss.str();
 
     // build message
     rep.set_safe();
-    rep.set_self_discard();
-    rep.set_type(underlying_cast(MsgType::CollectiveGroupIdp));
+    rep.set_type(underlying_cast(MsgType::CreateCollectiveIdp));
     rep.add(tmp.c_str(), tmp.size());
     dest.add(group);
 
@@ -967,29 +1003,163 @@ void Controller::SendCollectiveGroupIdp(std::string const& comm, idp_t idp)
     _mbox->send(rep, dest);
 }
 
-void Controller::HandleCollectiveGroupIdp()
+void Controller::HandleCreateCollectiveIdp()
 {
-    std::string comm;
     idp_t idp;
+    auto context = GetContextFromContextGroup(_groups[0]);
 
     {
         std::string sobj(_msg.begin(), _msg.size());
         std::istringstream iss(sobj, std::istringstream::binary);
         cereal::PortableBinaryInputArchive iarchive(iss);
-        iarchive(comm, idp);
+        iarchive(idp);
     }
 
-    _rsc_mgr->SetCollectiveGroupIdp(comm, idp);
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        _cc_idp[context] = idp;
+        _cc_cv[context].notify_all();
+    }
 }
 
-void Controller::SynchronizeCollectiveGroup(std::string const& comm)
+bool Controller::GetCreateCollectiveFirst(std::string const& context)
 {
-    _rsc_mgr->SynchronizeCollectiveGroup(comm);
+    std::future<bool> future;
+
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    auto tid = ss.str();
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        future = _cc_first.at({context, tid}).get_future();
+    }
+
+    return future.get();
+}
+
+idp_t Controller::GetCreateCollectiveIdp(std::string const& context)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+
+    if (_cc_idp.find(context) == _cc_idp.end())
+        _cc_cv[context].wait(lk);
+
+    return _cc_idp.at(context);
+}
+
+void Controller::CreateStaticGroup(idp_t comm, unsigned int total_members)
+{
+    _rsc_mgr->CreateStaticGroup(comm, total_members);
+}
+
+void Controller::SendStaticGroupCreate(idp_t comm)
+{
+    ScatterMessage rep;
+    GroupList dest;
+
+    // serialize comm
+    std::ostringstream oss(std::stringstream::binary);
+    cereal::PortableBinaryOutputArchive oarchive(oss);
+    oarchive(comm);
+    const std::string& tmp = oss.str();
+
+    // build message
+    rep.set_safe();
+    rep.set_type(underlying_cast(MsgType::StaticGroupCreate));
+    rep.add(tmp.c_str(), tmp.size());
+    dest.add(_app_group);
+
+    // send message
+    _mbox->send(rep, dest);
+}
+
+void Controller::HandleStaticGroupCreate()
+{
+    idp_t comm;
+
+    {
+        std::string sobj(_msg.begin(), _msg.size());
+        std::istringstream iss(sobj, std::istringstream::binary);
+        cereal::PortableBinaryInputArchive iarchive(iss);
+        iarchive(comm);
+    }
+
+    std::thread t(&ResourceManager::HandleCreateStaticGroup, _rsc_mgr, comm);
+    t.detach();
+}
+
+void Controller::SynchronizeStaticGroup(idp_t comm)
+{
+    _rsc_mgr->SynchronizeStaticGroup(comm);
+}
+
+void Controller::SendStaticGroupSynchronize(idp_t comm)
+{
+    ScatterMessage rep;
+    GroupList dest;
+
+    // serialize comm
+    std::ostringstream oss(std::stringstream::binary);
+    cereal::PortableBinaryOutputArchive oarchive(oss);
+    oarchive(comm);
+    const std::string& tmp = oss.str();
+
+    // build message
+    rep.set_safe();
+    rep.set_type(underlying_cast(MsgType::StaticGroupSynchronize));
+    rep.add(tmp.c_str(), tmp.size());
+    dest.add(_app_group);
+
+    // send message
+    _mbox->send(rep, dest);
+}
+
+void Controller::HandleStaticGroupSynchronize()
+{
+    idp_t comm;
+
+    {
+        std::string sobj(_msg.begin(), _msg.size());
+        std::istringstream iss(sobj, std::istringstream::binary);
+        cereal::PortableBinaryInputArchive iarchive(iss);
+        iarchive(comm);
+    }
+
+    std::thread t(&ResourceManager::HandleSynchronizeStaticGroup, _rsc_mgr, comm);
+    t.detach();
 }
 
 std::string const& Controller::GetName() const
 {
     return _mbox->private_group();
+}
+
+void Controller::JoinContextGroup(std::string const& context)
+{
+    std::string group = GetContextGroup(context);
+    _mbox->join(group);
+}
+
+void Controller::LeaveContextGroup(std::string const& context)
+{
+    std::string group = GetContextGroup(context);
+    _mbox->leave(group);
+}
+
+bool Controller::IsContextGroup(std::string const& group)
+{
+    return (group.find("$") != std::string::npos);
+}
+
+std::string Controller::GetContextGroup(std::string const& context)
+{
+    return _app_group + "$" + context;
+}
+
+std::string Controller::GetContextFromContextGroup(std::string const& group)
+{
+    return group.substr(group.find("$") + 1);
 }
 
 void Controller::JoinResourceGroup(idp_t idp)
@@ -1019,31 +1189,6 @@ idp_t Controller::GetIdpFromResourceGroup(std::string const& group)
     return std::stoul(group.substr(group.find("@") + 2));
 }
 
-void Controller::JoinCommunicatorGroup(std::string const& comm)
-{
-    std::string group = GetCommunicatorGroup(comm);
-    _mbox->join(group);
-}
 
-void Controller::LeaveCommunicatorGroup(std::string const& comm)
-{
-    std::string group = GetCommunicatorGroup(comm);
-    _mbox->leave(group);
-}
-
-bool Controller::IsCommunicatorGroup(std::string const& group)
-{
-    return (group.find("$") != std::string::npos);
-}
-
-std::string Controller::GetCommunicatorGroup(std::string const& comm)
-{
-    return _app_group + "$" + comm;
-}
-
-std::string Controller::GetCommFromCommunicatorGroup(std::string const& group)
-{
-    return group.substr(group.find("$") + 1);
-}
 
 }

@@ -7,43 +7,22 @@
 namespace cor {
 
 template <typename T, typename ... Args>
-ResourcePtr<T> ResourceManager::Create(idp_t ctx, std::string const& name, bool global, std::string const& ctrl, Args&& ... args)
+ResourcePtr<T> ResourceManager::Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args)
 {
     auto idp = GenerateIdp();
     auto rsc = new T(idp, std::forward<Args>(args)...);
-    return AllocateResource<T>(idp, ctx, name, global, rsc, ctrl);
+    return AllocateResource<T>(idp, ctx, name, rsc, ctrl);
 }
 
 template <typename T, typename ... Args>
-ResourcePtr<T> ResourceManager::Create(idp_t idp, idp_t ctx, std::string const& name, bool global, std::string const& ctrl, Args&& ... args)
+ResourcePtr<T> ResourceManager::Create(idp_t idp, idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args)
 {
     auto rsc = new T(idp, std::forward<Args>(args)...);
-    return AllocateResource<T>(idp, ctx, name, global, rsc, ctrl);
-}
-
-template <typename T, typename ... Args>
-ResourcePtr<T> ResourceManager::CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, bool global, std::string const& ctrl, Args&& ... args)
-{
-    ResourcePtr<T> rsc_ptr;
-
-    CreateCollectiveGroup(name, total_members);
-    auto first = GetCollectiveGroupFirst(name);
-
-    if (first) {
-        auto idp = GenerateIdp();
-        auto rsc = new T(idp, std::forward<Args>(args)...);
-        rsc_ptr = AllocateResource<T>(idp, ctx, name, false, rsc, ctrl);
-        SendCollectiveGroupIdp(name, idp);
-    } else {
-        auto idp = GetCollectiveGroupIdp(name);
-        rsc_ptr = CreateReference<T>(idp, ctx, name, ctrl);
-    }
-
-    return rsc_ptr;
+    return AllocateResource<T>(idp, ctx, name, rsc, ctrl);
 }
 
 template <typename T>
-ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, bool global, Resource *rsc, std::string const& ctrl)
+ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc, std::string const& ctrl)
 {
     // get ctx resource
     auto ctx_rsc = GetResource(ctx);
@@ -64,11 +43,11 @@ ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::stri
     JoinResourceGroup(idp);
 
     // create consistency object
-    auto cobj = new ConsistencyObject(this, idp, true, global,
+    auto cobj = new ConsistencyObject{this, idp, true,
             [] (cor::Resource *rsc, cor::Resource *new_rsc) {
                 rsc->~Resource();
                 rsc = new (rsc) T(std::move(*static_cast<T*>(new_rsc)));
-            }, ctrl);
+            }, ctrl};
 
     cobj->SetResource(rsc);
 
@@ -88,9 +67,6 @@ ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::stri
     }
 
     //DummyInsertWorldContext(idp, name, rsc, ctrl);
-
-    if (global)
-        SendResourceAllocationInfo(idp);
 
     return GetLocalResource<T>(idp);
 }
@@ -125,7 +101,6 @@ ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ctx, std::strin
 template <typename T>
 void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
 {
-    // lock to access resource manager variables
     std::unique_lock<std::mutex> lk(_mtx);
 
     if (_sync_gfind.find(idp) == _sync_gfind.end()) {
@@ -148,11 +123,11 @@ void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
         JoinResourceGroup(idp);
         
         // create consistency object for resource
-        auto cobj = new ConsistencyObject(this, idp, false, true,
+        auto cobj = new ConsistencyObject{this, idp, false,
             [] (Resource *rsc, Resource *new_rsc) {
                 rsc->~Resource();
                 rsc = new (rsc) T(std::move(*static_cast<T*>(new_rsc)));
-            }, ctrl);
+            }, ctrl};
 
         // insert local consistency object
         _cst_objs.emplace(idp, cobj);
@@ -165,6 +140,8 @@ void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
 template <typename T>
 ResourcePtr<T> ResourceManager::GetLocalResource(idp_t idp)
 {
+    std::unique_lock<std::mutex> lk(_mtx);
+
     auto cst_obj = _cst_objs.find(idp);
     if (cst_obj == _cst_objs.end())
         throw std::runtime_error("Resource " + std::to_string(idp) + " does not exist locally!");

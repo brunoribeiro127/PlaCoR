@@ -75,7 +75,7 @@ std::string const& DynamicOrganizer::GetModuleName() const
     return _module;
 }
 
-size_t DynamicOrganizer::GetTotalMembers() const
+std::size_t DynamicOrganizer::GetTotalMembers() const
 {
     // get consistency object
     auto cobj = global::pod->GetConsistencyObject(_idp);

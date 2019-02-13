@@ -32,7 +32,7 @@ public:
 
     std::string const& GetModuleName() const;
     
-    size_t GetTotalMembers() const;
+    std::size_t GetTotalMembers() const;
     std::vector<idp_t> GetMemberList() const;
 
     idp_t GetIdp(idm_t idm) const;

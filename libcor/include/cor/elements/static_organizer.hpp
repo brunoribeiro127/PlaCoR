@@ -40,17 +40,16 @@ public:
 
 protected:
     StaticOrganizer();
-    explicit StaticOrganizer(idp_t idp, std::string const& comm, unsigned int total_members, idp_t parent);
+    explicit StaticOrganizer(idp_t idp, unsigned int total_members, idp_t parent);
 
 private:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(_idp, _comm, _total_members, _parent, _members, _next_idm);
+        ar(_idp, _total_members, _parent, _members, _next_idm);
     }
 
     idp_t _idp;
-    std::string _comm;
     unsigned int _total_members;
     idp_t _parent;
     std::map<idp_t, std::pair<idm_t, std::string>> _members;

@@ -26,15 +26,15 @@ void Message::Clear()
 {
     _data.clear();
 }
-    
-void Message::SetType(std::uint16_t type)
-{
-    _type = type;
-}
 
 std::uint16_t Message::Type() const
 {
     return _type;
+}
+
+void Message::SetType(std::uint16_t type)
+{
+    _type = type;
 }
 
 idp_t Message::Sender() const

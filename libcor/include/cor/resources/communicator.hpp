@@ -1,8 +1,6 @@
 #ifndef COR_COMMUNICATOR_HPP
 #define COR_COMMUNICATOR_HPP
 
-#include <string>
-
 #include "cor/resources/resource.hpp"
 #include "cor/elements/static_organizer.hpp"
 
@@ -27,7 +25,7 @@ public:
 
 protected:
     Communicator();
-    explicit Communicator(idp_t idp, std::string const& comm, unsigned int total_members, idp_t parent);
+    explicit Communicator(idp_t idp, unsigned int total_members, idp_t parent);
 
 private:
     template <typename Archive>

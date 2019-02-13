@@ -3,9 +3,9 @@
 namespace cor {
 
 template <typename T>
-ResourcePtr<T> Pod::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, bool global, Resource *rsc)
+ResourcePtr<T> Pod::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc)
 {
-    return _ctrl->AllocateResource<T>(idp, ctx, name, global, rsc);
+    return _ctrl->AllocateResource<T>(idp, ctx, name, rsc);
 }
 
 template <typename T>
@@ -23,15 +23,15 @@ ResourcePtr<T> Pod::GetLocalResource(idp_t idp)
 }
 
 template <typename T, typename ... Args>
-ResourcePtr<T> Pod::Create(idp_t ctx, std::string const& name, bool global, Args&& ... args)
+ResourcePtr<T> Pod::Create(idp_t ctx, std::string const& name, Args&& ... args)
 {
-    return _ctrl->Create<T>(ctx, name, global, std::forward<Args>(args)...);
+    return _ctrl->Create<T>(ctx, name, std::forward<Args>(args)...);
 }
 
 template <typename T, typename ... Args>
-ResourcePtr<T> Pod::CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, bool global, Args&& ... args)
+ResourcePtr<T> Pod::CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args)
 {
-    return _ctrl->CreateCollective<T>(ctx, name, total_members, global, std::forward<Args>(args)...);
+    return _ctrl->CreateCollective<T>(ctx, name, total_members, std::forward<Args>(args)...);
 }
 
 template <typename T>

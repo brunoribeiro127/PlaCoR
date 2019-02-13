@@ -21,7 +21,7 @@ friend class ResourceManager;
 template <typename> friend class ResourcePtr;
 
 public:
-    explicit ConsistencyObject(ResourceManager *rsc_mgr, idp_t idp, bool is_owner, bool global, std::function<void(Resource*, Resource*)> update_func, std::string const& ctrl);
+    explicit ConsistencyObject(ResourceManager *rsc_mgr, idp_t idp, bool is_owner, std::function<void(Resource*, Resource*)> update_func, std::string const& ctrl);
 
     ~ConsistencyObject();
 
@@ -40,13 +40,13 @@ public:
 protected:
     // interface to ResourceManager
     void AcquireReplica(Resource *rsc);
-    void ReleaseReplica(bool self);
-    void CheckReplica(std::string const& requester);
+    void ReleaseReplica(std::string const& requester);
+    void CheckReplica(unsigned int size, std::string const& requester);
 
     void AcquireTokenUpdate(Resource *rsc, std::string const& replier);
     void CheckTokenUpdate(std::string const& requester);
 
-    void Invalidate(std::string const& requester);
+    void Invalidate();
 
     void Update(Resource *rsc);
     void CheckUpdate(std::string const& requester);
@@ -71,10 +71,9 @@ private:
     idp_t _idp;                     // resource idp
     Resource *_rsc;                 // resource obj
     
+    std::condition_variable _wfree; // wait free cv
     std::uint16_t _local_ref_cntr;  // local reference counter
     std::uint16_t _global_ref_cntr; // global reference counter
-
-    bool _global;                   // UNUSED
 
     bool _owner;                    // true -> created the resource; false -> created a reference for the resource
     bool _token;                    // true -> owns token; false -> do not owns token

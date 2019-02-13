@@ -9,10 +9,12 @@
 #include <typeinfo>
 #include <cassert>
 #include <stdexcept>
+#include <algorithm>
 
 // to remove
 #include <iostream>
 #include <cassert>
+#include <thread>
 
 namespace cor {
 
@@ -34,20 +36,15 @@ void ResourceManager::CreateInitialContext(std::string const& ctrl)
         CreateMetaDomain(ctrl);
     else
         CreateReplica<Domain>(cor::MetaDomain, ctrl);
+
+    GetConsistencyObject(cor::MetaDomain)->IncrementLocalReferenceCounter();
 }
 
 void ResourceManager::CleanInitialContext()
 {
-    //std::cout << "<" << _ctrl->GetName() << "> CLEAN INITIAL CONTEXT" << std::endl;
-
-    //_ctrl->LeaveResourceGroup(cor::MetaDomain);
-/*
-    {
-        std::unique_lock<std::mutex> lk(_mtx);
-
-        std::cout << "--->>> " << std::to_string(_cst_objs.size()) << "\t" << std::to_string(_predecessors.size()) << std::endl;
-    }
-*/
+    //std::cout << "BEGIN CleanInitialContext" << std::endl;
+    GetConsistencyObject(cor::MetaDomain)->DecrementLocalReferenceCounter();
+    //std::cout << "END CleanInitialContext" << std::endl;
 }
 
 void ResourceManager::CreateMetaDomain(std::string const& ctrl)
@@ -59,11 +56,11 @@ void ResourceManager::CreateMetaDomain(std::string const& ctrl)
     JoinResourceGroup(cor::MetaDomain);
 
     // create consistency object
-    auto cobj = new ConsistencyObject(this, cor::MetaDomain, true, true,
+    auto cobj = new ConsistencyObject{this, cor::MetaDomain, true,
         [] (Resource *rsc, Resource *new_rsc) {
             rsc->~Resource();
             rsc = new (rsc) Domain(std::move(*static_cast<Domain*>(new_rsc)));
-        }, ctrl);
+        }, ctrl};
 
     // assign resource to consistency object
     cobj->SetResource(rsc);
@@ -101,6 +98,12 @@ void ResourceManager::InsertResourceReplica(idp_t idp, Resource *rsc)
         // notify waiting threads that the replica has been created
         _sync_replicas[idp].notify_all();
     }
+}
+
+bool ResourceManager::ContainsResource(idp_t idp)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+    return (_cst_objs.find(idp) != _cst_objs.end());
 }
 
 Resource *ResourceManager::GetResource(idp_t idp)
@@ -147,6 +150,17 @@ idp_t ResourceManager::GetPredecessorIdp(idp_t idp)
     return _predecessors.at(idp);
 }
 
+void ResourceManager::EraseResource(idp_t idp)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+
+    auto rsc_cst_obj = _cst_objs.at(idp);
+    _cst_objs.erase(idp);
+    delete rsc_cst_obj;
+
+    _sync_free[idp].notify_all();
+}
+
 void ResourceManager::SendResourceAllocationInfo(idp_t idp)
 {
     _ctrl->SendResourceAllocationInfo(idp);
@@ -182,48 +196,88 @@ void ResourceManager::GlobalResourceFound(idp_t idp)
 
 void ResourceManager::DeallocateResource(idp_t idp)
 {
-/*
     std::unique_lock<std::mutex> lk(_mtx);
 
-    auto ctx = _predecessors.at(idp);
+    std::cout << "BEGIN <" << _ctrl->GetName() << "> DEALLOCATE RESOURCE " << std::to_string(idp) << std::endl;
 
-    auto ctx_cst_obj = _cst_objs.find(ctx);
-    if (ctx != cor::MetaDomain && ctx_cst_obj != _cst_objs.end()) {
+    auto rsc_cst_obj = _cst_objs.at(idp);
+    auto rsc = rsc_cst_obj->GetResource();
 
-        auto ctx_rsc = ctx_cst_obj->second->GetResource();
+    if (idp == cor::MetaDomain)
+        _predecessors.erase(idp);
+
+    if (dynamic_cast<DynamicOrganizer*>(rsc) != nullptr /* || dynamic_cast<StaticOrganizer*>(rsc) != nullptr */) {
+
+        // get all keys with same value from predecessors
+        std::vector<idp_t> rscs;
+        std::for_each(_predecessors.begin(), _predecessors.end(),
+            [&] (const auto& pair) -> void {
+                if (pair.second == idp)
+                    rscs.push_back(pair.first);
+            });
+
+        for (const auto& rsc_idp: rscs) {
+
+            std::cout << "--->>> " << std::to_string(rsc_idp) << std::endl;
+
+            if (_cst_objs.find(rsc_idp) != _cst_objs.end()) {
+
+                std::cout << "WAIT FOR DEALLOCATE OF RESOURCE <" << rsc_idp << ">" << std::endl;
+                _sync_free[rsc_idp].wait(lk);
+                std::cout << "WAIT SUCCEDED FOR DEALLOCATE OF RESOURCE <" << rsc_idp << ">" << std::endl;
+
+                _predecessors.erase(rsc_idp);
+                _sync_free.erase(rsc_idp);
+                
+            } else {
+                _predecessors.erase(rsc_idp);
+            }
+        }
+    }
+
+    if (idp != cor::MetaDomain) {
+        auto ctx_idp = _predecessors.at(idp);
+        auto ctx = _cst_objs.at(ctx_idp)->GetResource();
 
         lk.unlock();
 
-        auto dorg = dynamic_cast<DynamicOrganizer*>(ctx_rsc);
-        if (dorg != nullptr)
+        auto dorg = dynamic_cast<DynamicOrganizer*>(ctx);
+        if (dorg != nullptr) {
             dorg->Leave(idp);
+        }
+    /*
+        else {
+
+            auto sorg = dynamic_cast<StaticOrganizer*>(ctx);
+            if (sorg != nullptr)
+                sorg->Leave(idp);
+        }
+    */
 
         lk.lock();
     }
 
-    auto rsc_cst_obj = _cst_objs.at(idp);
-
-    _cst_objs.erase(idp);
-    _predecessors.erase(idp);
-
-    delete rsc_cst_obj;
-*/
-    //std::cout << "<" << _ctrl->GetName() << "> DEALLOCATE RESOURCE " << std::to_string(idp) << std::endl;
+    std::cout << "END <" << _ctrl->GetName() << "> DEALLOCATE RESOURCE " << std::to_string(idp) << std::endl;
 }
 
-void ResourceManager::ReleaseReplica(idp_t idp, bool self)
+void ResourceManager::CheckReplica(idp_t idp, unsigned int size, std::string requester)
 {
-    GetConsistencyObject(idp)->ReleaseReplica(self);
-}
-
-void ResourceManager::CheckReplica(idp_t idp, std::string requester)
-{
-    GetConsistencyObject(idp)->CheckReplica(requester);
+    GetConsistencyObject(idp)->CheckReplica(size, requester);
 }
 
 void ResourceManager::SendReplica(idp_t idp, Resource *rsc, std::string const& requester)
 {
     _ctrl->SendReplica(idp, rsc, requester);
+}
+
+void ResourceManager::RequestReleaseReplica(idp_t idp)
+{
+    _ctrl->SendReleaseReplicaRequest(idp);
+}
+
+void ResourceManager::ReleaseReplica(idp_t idp, std::string requester)
+{
+    GetConsistencyObject(idp)->ReleaseReplica(requester);
 }
 
 void ResourceManager::RequestUpdate(idp_t idp)
@@ -251,9 +305,9 @@ void ResourceManager::RequestInvalidate(idp_t idp)
     _ctrl->SendInvalidateRequest(idp);
 }
 
-void ResourceManager::Invalidate(idp_t idp, std::string requester)
+void ResourceManager::Invalidate(idp_t idp)
 {
-    GetConsistencyObject(idp)->Invalidate(requester);
+    GetConsistencyObject(idp)->Invalidate();
 }
 
 void ResourceManager::RequestTokenUpdate(idp_t idp)
@@ -296,109 +350,62 @@ void ResourceManager::LeaveResourceGroup(idp_t idp)
     _ctrl->LeaveResourceGroup(idp);
 }
 
-void ResourceManager::CreateCollectiveGroup(std::string const& comm, unsigned int total_members)
-{
-    {
-        std::unique_lock<std::mutex> lk(_mtx);
-        _cg_sync.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());
-        _cg_vars.emplace(comm, std::make_pair(0, total_members));
-        
-        if (_cg_cv.find(comm) == _cg_cv.end())
-            _cg_cv.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());
-        else
-            _cg_cv.at(comm).notify_all();
-    }
-
-    _ctrl->SendCollectiveGroupCreate(comm);
-
-    {
-        std::unique_lock<std::mutex> lk(_mtx);
-        while (std::get<0>(_cg_vars.at(comm)) != std::get<1>(_cg_vars.at(comm)))
-            _cg_cv.at(comm).wait(lk);
-        std::get<0>(_cg_vars.at(comm)) = 0;
-    }
-}
-
-void ResourceManager::HandleCreateCollectiveGroup(std::string const& comm, bool self)
-{
-    std::unique_lock<std::mutex> lk(_mtx);
-    if (_cg_vars.find(comm) == _cg_vars.end()) {
-
-        if (_cg_cv.find(comm) == _cg_cv.end())
-            _cg_cv.emplace(std::piecewise_construct, std::forward_as_tuple(comm), std::forward_as_tuple());
-
-        _cg_cv.at(comm).wait(lk);
-    }
-
-    std::get<0>(_cg_vars.at(comm)) += 1;
-
-    if (std::get<0>(_cg_vars.at(comm)) == 1)
-        std::get<0>(_cg_sync.at(comm)).set_value(self);
-
-    if (std::get<0>(_cg_vars.at(comm)) == std::get<1>(_cg_vars.at(comm)))
-        _cg_cv.at(comm).notify_one();
-}
-
-void ResourceManager::SynchronizeCollectiveGroup(std::string const& comm)
-{
-    _ctrl->SendCollectiveGroupSync(comm);
-    
-    {
-        std::unique_lock<std::mutex> lk(_mtx);
-        while (std::get<0>(_cg_vars.at(comm)) != std::get<1>(_cg_vars.at(comm)))
-            _cg_cv.at(comm).wait(lk);
-        std::get<0>(_cg_vars.at(comm)) = 0;
-    }
-}
-
-void ResourceManager::HandleSynchronizeCollectiveGroup(std::string const& comm)
-{
-    std::unique_lock<std::mutex> lk(_mtx);
-
-    std::get<0>(_cg_vars.at(comm)) += 1;
-
-    if (std::get<0>(_cg_vars.at(comm)) == std::get<1>(_cg_vars.at(comm)))
-        _cg_cv.at(comm).notify_one();
-}
-
-void ResourceManager::SendCollectiveGroupIdp(std::string const& comm, idp_t idp)
-{
-    _ctrl->SendCollectiveGroupIdp(comm, idp);
-}
-
-bool ResourceManager::GetCollectiveGroupFirst(std::string const& comm)
-{
-    std::future<bool> future;
-
-    {
-        std::unique_lock<std::mutex> lk(_mtx);
-        future = std::get<0>(_cg_sync.at(comm)).get_future();
-    }
-
-    return future.get();
-}
-
-idp_t ResourceManager::GetCollectiveGroupIdp(std::string const& comm)
-{
-    std::future<idp_t> future;
-
-    {
-        std::unique_lock<std::mutex> lk(_mtx);
-        future = std::get<1>(_cg_sync.at(comm)).get_future();
-    }
-
-    return future.get();
-}
-
-void ResourceManager::SetCollectiveGroupIdp(std::string const& comm, idp_t idp)
-{
-    std::unique_lock<std::mutex> lk(_mtx);
-    std::get<1>(_cg_sync.at(comm)).set_value(idp);
-}
-
 idp_t ResourceManager::GenerateIdp()
 {
     return _ctrl->GenerateIdp();
+}
+
+void ResourceManager::CreateStaticGroup(idp_t comm, unsigned int total_members)
+{
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        _sg_vars.emplace(comm, std::make_pair(0, total_members));
+        _sg_cv[comm].notify_all();
+    }
+
+    _ctrl->SendStaticGroupCreate(comm);
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        while (_sg_vars[comm].first != _sg_vars[comm].second)
+            _sg_cv[comm].wait(lk);
+        _sg_vars[comm].first = 0;
+    }
+}
+
+void ResourceManager::HandleCreateStaticGroup(idp_t comm)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+
+    if (_sg_vars.find(comm) == _sg_vars.end())
+        _sg_cv[comm].wait(lk);
+
+    _sg_vars[comm].first += 1;
+
+    if (_sg_vars[comm].first == _sg_vars[comm].second)
+        _sg_cv[comm].notify_all();
+}
+
+void ResourceManager::SynchronizeStaticGroup(idp_t comm)
+{
+    _ctrl->SendStaticGroupSynchronize(comm);
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        while (_sg_vars[comm].first != _sg_vars[comm].second)
+            _sg_cv[comm].wait(lk);
+        _sg_vars[comm].first = 0;
+    }
+}
+
+void ResourceManager::HandleSynchronizeStaticGroup(idp_t comm)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+
+    _sg_vars[comm].first += 1;
+
+    if (_sg_vars[comm].first == _sg_vars[comm].second)
+        _sg_cv[comm].notify_all();
 }
 
 /*

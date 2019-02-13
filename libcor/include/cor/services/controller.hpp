@@ -29,7 +29,7 @@ friend class PageManager;
 friend class ResourceManager;
 
 public:
-    explicit Controller(std::string const& app_group, std::string const& communicator, unsigned int npods, Mailer *mlr);
+    explicit Controller(std::string const& app_group, std::string const& context, unsigned int npods, Mailer *mlr);
 
     ~Controller();
 
@@ -41,10 +41,14 @@ public:
     idp_t GenerateIdp();
 
     template <typename T>
-    ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, bool global, Resource *rsc);
+    ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc);
 
     ConsistencyObject *GetConsistencyObject(idp_t idp);
 
+    std::string const& GetGlobalContext();
+    std::string const& GetLocalContext();
+
+    unsigned int GetTotalPods();
     unsigned int GetTotalDomains();
 
     // not global function, only local domain
@@ -57,18 +61,21 @@ public:
     ResourcePtr<T> GetLocalResource(idp_t idp);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> Create(idp_t ctx, std::string const& name, bool global, Args&& ... args);
+    ResourcePtr<T> Create(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_nembers, bool global, Args&& ... args);
+    ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args);
 
     template <typename T>
     ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name);
 
-    idp_t Spawn(std::string const& comm, unsigned int npods, idp_t parent, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
+    idp_t Spawn(std::string const& context, unsigned int npods, idp_t parent, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
 
     // accessed by StaticOrganizer
-    void SynchronizeCollectiveGroup(std::string const& comm);
+    void CreateStaticGroup(idp_t comm, unsigned int total_members);
+
+    // accessed by SBarrier
+    void SynchronizeStaticGroup(idp_t comm);
 
     Controller() = delete;
     Controller(Controller const&) = delete;
@@ -111,6 +118,9 @@ protected:
     void SendReplica(idp_t idp, Resource *rsc, std::string const& ctrl);
     void HandleCreateReplica();
 
+    void SendReleaseReplicaRequest(idp_t idp);
+    void HandleReleaseReplicaRequest();
+
     void SendUpdateRequest(idp_t idp);
     void HandleUpdateRequest();
     void SendUpdateReply(idp_t idp, Resource *rsc, std::string const& ctrl);
@@ -127,29 +137,37 @@ protected:
     void SendTokenAck(idp_t idp, std::string const& ctrl);
     void HandleTokenAck();
 
-    void SendCollectiveGroupCreate(std::string const& comm);
-    void HandleCollectiveGroupCreate();
+    void InitCreateCollective(std::string const& context, unsigned int total_members);
+    void SendCreateCollectiveInit(std::string const& context, std::string const& tid);
+    void HandleCreateCollectiveInit();
+    void HandleInitCreateCollective(std::string const& context, std::string const& tid, bool local);
 
-    void SendCollectiveGroupSync(std::string const& comm);
-    void HandleCollectiveGroupSync();
+    void SendCreateCollectiveIdp(std::string const& context, idp_t idp);
+    void HandleCreateCollectiveIdp();
 
-    void SendCollectiveGroupIdp(std::string const& comm, idp_t idp);
-    void HandleCollectiveGroupIdp();
+    bool GetCreateCollectiveFirst(std::string const& context);
+    idp_t GetCreateCollectiveIdp(std::string const& context);
+
+    void SendStaticGroupCreate(idp_t comm);
+    void HandleStaticGroupCreate();
+
+    void SendStaticGroupSynchronize(idp_t comm);
+    void HandleStaticGroupSynchronize();
 
 private:
     std::string const& GetName() const;
+
+    void JoinContextGroup(std::string const& context);
+    void LeaveContextGroup(std::string const& context);
+    bool IsContextGroup(std::string const& group);
+    std::string GetContextGroup(std::string const& context);
+    std::string GetContextFromContextGroup(std::string const& group);
 
     void JoinResourceGroup(idp_t idp);
     void LeaveResourceGroup(idp_t idp);
     bool IsResourceGroup(std::string const& group);
     std::string GetResourceGroup(idp_t idp);
     idp_t GetIdpFromResourceGroup(std::string const& group);
-
-    void JoinCommunicatorGroup(std::string const& comm);
-    void LeaveCommunicatorGroup(std::string const& comm);
-    bool IsCommunicatorGroup(std::string const& group);
-    std::string GetCommunicatorGroup(std::string const& comm);
-    std::string GetCommFromCommunicatorGroup(std::string const& group);
 
     enum class MsgType: std::int16_t
     {
@@ -163,6 +181,8 @@ private:
 
         CreateReplica,
 
+        ReleaseReplicaRequest,
+
         UpdateRequest,
         UpdateReply,
         
@@ -173,9 +193,11 @@ private:
 
         TokenAck,
 
-        CollectiveGroupCreate,
-        CollectiveGroupSync,
-        CollectiveGroupIdp,
+        CreateCollectiveInit,
+        CreateCollectiveIdp,
+
+        StaticGroupCreate,
+        StaticGroupSynchronize,
 
         FinalizeContext,
         Finalize
@@ -187,7 +209,7 @@ private:
     }
 
     std::string _app_group;
-    std::string _communicator;
+    std::string _context;
     unsigned int _npods;
 
     // service thread
@@ -222,6 +244,11 @@ private:
     ssrc::spread::Message _msg;
     ssrc::spread::GroupList _groups;
     ssrc::spread::MembershipInfo _info;
+
+    std::map<std::pair<std::string, std::string>, std::promise<bool>> _cc_first;
+    std::map<std::string, idp_t> _cc_idp;
+    std::map<std::string, std::pair<unsigned int, unsigned int>> _cc_vars;
+    std::map<std::string, std::condition_variable> _cc_cv;
 
 };
 

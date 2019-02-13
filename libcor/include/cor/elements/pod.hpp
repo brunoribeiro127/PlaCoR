@@ -22,8 +22,6 @@ class ConsistencyObject;
 class Pod
 {
 
-template <typename> friend class ResourceFactory;
-
 friend class DynamicOrganizer;
 template <typename> friend class Value;
 template <typename> friend class Executor;
@@ -34,13 +32,17 @@ friend class SMutex;
 friend class SRWMutex;
 
 public:
-    explicit Pod(std::string const& app_group, std::string const& communicator, unsigned int npods);
+    explicit Pod(std::string const& app_group, std::string const& context, unsigned int npods);
 
     ~Pod();
 
     void Initialize();
     void Finalize();
 
+    std::string const& GetGlobalContext();
+    std::string const& GetLocalContext();
+
+    unsigned int GetTotalPods();
     unsigned int GetTotalDomains();
 
     idp_t GetActiveResourceIdp();
@@ -56,15 +58,15 @@ public:
     ResourcePtr<T> GetLocalResource(idp_t idp);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> Create(idp_t ctx, std::string const& name, bool global, Args&& ... args);
+    ResourcePtr<T> Create(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, bool global, Args&& ... args);
+    ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args);
 
     template <typename T>
     ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name);
 
-    idp_t Spawn(std::string const& comm, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
+    idp_t Spawn(std::string const& context, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
 
     Pod() = delete;
     Pod(const Pod&) = delete;
@@ -77,7 +79,7 @@ protected:
     idp_t GenerateIdp();
 
     template <typename T>
-    ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, bool global, Resource *rsc);
+    ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc);
 
     // accessed by Organizer and Value
     ConsistencyObject *GetConsistencyObject(idp_t idp);
@@ -101,7 +103,10 @@ protected:
     Message ReceiveMessage(idp_t idp, idp_t source);
 
     // accessed by StaticOrganizer
-    void SynchronizeCollectiveGroup(std::string const& comm);
+    void CreateStaticGroup(idp_t comm, unsigned int total_members);
+
+    // accessed by SBarrier
+    void SynchronizeStaticGroup(idp_t comm);
 
 private:
     Mailer *_mlr;
