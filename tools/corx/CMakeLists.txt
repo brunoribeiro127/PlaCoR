@@ -1,6 +1,6 @@
 add_executable(corx corx.cpp)
 
-target_compile_features(corx PUBLIC cxx_std_14)
+target_compile_features(corx PUBLIC cxx_std_17)
 set_target_properties(corx PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(corx PROPERTIES COMPILE_FLAGS -O2)
 
@@ -14,7 +14,6 @@ target_link_libraries(
         LibEvent
         Cereal
         LibSSH
-        Boost::boost
         -lssp
 )
 else(CMAKE_SYSTEM_NAME MATCHES "SunOS")
@@ -27,7 +26,6 @@ target_link_libraries(
         LibEvent
         Cereal
         LibSSH
-        Boost::boost
 )
 endif(CMAKE_SYSTEM_NAME MATCHES "SunOS")
 

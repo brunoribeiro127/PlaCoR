@@ -7,5 +7,6 @@ target_sources(
         "${CMAKE_CURRENT_LIST_DIR}/page_manager.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/remote_session.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/resource_manager.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/rpc_manager.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/session_manager.cpp"
 )

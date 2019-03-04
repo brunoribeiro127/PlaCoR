@@ -7,7 +7,7 @@
 namespace cor {
 
 template <typename T, typename ... Args>
-ResourcePtr<T> ResourceManager::Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args)
+ResourcePtr<T> ResourceManager::CreateLocal(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args)
 {
     auto idp = GenerateIdp();
     auto rsc = new T(idp, std::forward<Args>(args)...);
@@ -15,10 +15,34 @@ ResourcePtr<T> ResourceManager::Create(idp_t ctx, std::string const& name, std::
 }
 
 template <typename T, typename ... Args>
-ResourcePtr<T> ResourceManager::Create(idp_t idp, idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args)
+idp_t ResourceManager::CreateRemote(idp_t ctx, std::string const& name, Args&& ... args)
 {
+    SearchResource(ctx);
+    //CallCreate<T>(group, ctx, name, );
+    return 0;
+}
+
+template <typename T, typename ... Args>
+idp_t ResourceManager::Create(idp_t ctx, std::string const& name, Args&& ... args)
+{
+/*
+    auto idp = GenerateIdp();
     auto rsc = new T(idp, std::forward<Args>(args)...);
-    return AllocateResource<T>(idp, ctx, name, rsc, ctrl);
+    AllocateResource<T>(idp, ctx, name, rsc, ctrl);
+    return idp;
+*/
+    return 0;
+}
+
+template <typename T, typename ... Args>
+idp_t ResourceManager::Create(idp_t idp, idp_t ctx, std::string const& name, Args&& ... args)
+{
+/*
+    auto rsc = new T(idp, std::forward<Args>(args)...);
+    AllocateResource<T>(idp, ctx, name, rsc, ctrl);
+    return idp;
+*/
+    return 0;
 }
 
 template <typename T>

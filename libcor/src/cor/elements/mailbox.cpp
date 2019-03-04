@@ -1,6 +1,5 @@
 #include "cor/elements/mailbox.hpp"
 
-#include "cor/elements/pod.hpp"
 #include "cor/system/system.hpp"
 
 namespace cor {

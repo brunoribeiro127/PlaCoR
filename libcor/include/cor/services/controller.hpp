@@ -17,6 +17,7 @@
 namespace cor {
 
 class Resource;
+class RpcManager;
 class SessionManager;
 class ResourceManager;
 class ConsistencyObject;
@@ -29,8 +30,7 @@ friend class PageManager;
 friend class ResourceManager;
 
 public:
-    explicit Controller(std::string const& app_group, std::string const& context, unsigned int npods, Mailer *mlr);
-
+    explicit Controller(std::string const& id, std::string const& app_group, std::string const& context, unsigned int npods, Mailer *mlr);
     ~Controller();
 
     void StartService();
@@ -61,7 +61,13 @@ public:
     ResourcePtr<T> GetLocalResource(idp_t idp);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> Create(idp_t ctx, std::string const& name, Args&& ... args);
+    ResourcePtr<T> CreateLocal(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
     ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args);
@@ -154,6 +160,11 @@ protected:
     void SendStaticGroupSynchronize(idp_t comm);
     void HandleStaticGroupSynchronize();
 
+    void SendSearchResourceRequest(idp_t idp);
+    void HandleSearchResourceRequest();
+    void SendSearchResourceReply(idp_t idp);
+    void HandleSearchResourceReply();
+
 private:
     std::string const& GetName() const;
 
@@ -233,6 +244,7 @@ private:
     PageManager *_pg_mgr;
     ResourceManager *_rsc_mgr;
     SessionManager *_sess_mgr;
+    RpcManager *_rpc_mgr;
 
     // communication system
     ssrc::spread::Mailbox *_mbox;

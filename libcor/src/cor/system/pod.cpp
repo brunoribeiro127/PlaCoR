@@ -1,4 +1,4 @@
-#include "cor/elements/pod.hpp"
+#include "cor/system/pod.hpp"
 
 #include "cor/services/mailer.hpp"
 
@@ -12,9 +12,12 @@ Pod::Pod(std::string const& app_group, std::string const& context, unsigned int 
     _modules{},
     _active_rscs{}
 {
+    // create random id
+    std::string id = random_string(9);
+
     // create a local instance of controller and mailer
-    _mlr = new Mailer{app_group};
-    _ctrl = new Controller{app_group, context, npods, _mlr};
+    _mlr = new Mailer{id, app_group};
+    _ctrl = new Controller{id, app_group, context, npods, _mlr};
 }
 
 

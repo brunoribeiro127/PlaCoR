@@ -22,6 +22,7 @@ class ConsistencyObject;
 class Pod
 {
 
+friend class Container;
 friend class DynamicOrganizer;
 template <typename> friend class Value;
 template <typename> friend class Executor;
@@ -58,7 +59,13 @@ public:
     ResourcePtr<T> GetLocalResource(idp_t idp);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> Create(idp_t ctx, std::string const& name, Args&& ... args);
+    ResourcePtr<T> CreateLocal(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
     ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args);
@@ -120,6 +127,6 @@ private:
 
 }
 
-#include "cor/elements/pod.tpp"
+#include "cor/system/pod.tpp"
 
 #endif

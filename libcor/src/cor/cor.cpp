@@ -1,8 +1,5 @@
 #include "cor/cor.hpp"
 
-#include "cor/system/system.hpp"
-#include "cor/elements/pod.hpp"
-
 namespace cor {
 
 void Initialize(std::string const& app_group, std::string const& context, unsigned int npods)

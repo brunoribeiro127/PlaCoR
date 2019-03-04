@@ -11,7 +11,7 @@ using namespace ev;
 
 namespace cor {
 
-Mailer::Mailer(std::string const& app_group) : 
+Mailer::Mailer(std::string const& id, std::string const& app_group) : 
     _app_group{app_group},
     _th_svc{},
     _mbox{nullptr},
@@ -21,8 +21,7 @@ Mailer::Mailer(std::string const& app_group) :
     _rwq{},
     _mtx{}
 {
-    // generate random name to mailer
-    std::string name = "M" + random_string(9);
+    std::string name = "M" + id;
 
     // instanciate communication system
     _mbox = new ssrcspread::Mailbox("4803", name, true, ssrcspread::Mailbox::High);

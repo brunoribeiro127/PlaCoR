@@ -377,6 +377,11 @@ void ConsistencyObject::TokenAck()
     _reqwq.notify_all();
 }
 
+bool ConsistencyObject::IsOwner()
+{
+    return _owner;
+}
+
 void ConsistencyObject::IncrementLocalReferenceCounter()
 {
     // lock to access member variables

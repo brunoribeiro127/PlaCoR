@@ -4,13 +4,14 @@
 #include <string>
 
 #include "cor/resources/resource.hpp"
+#include "cor/elements/container.hpp"
 #include "cor/elements/dynamic_organizer.hpp"
 
 #include "cereal/types/polymorphic.hpp"
 
 namespace cor {
 
-class Domain: public Resource, public DynamicOrganizer
+class Domain: public Resource, public Container, public DynamicOrganizer
 {
 
 friend class ResourceManager;
@@ -33,7 +34,7 @@ private:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(cereal::base_class<Resource>(this), cereal::base_class<DynamicOrganizer>(this));
+        ar(cereal::base_class<Resource>(this), cereal::base_class<Container>(this), cereal::base_class<DynamicOrganizer>(this));
     }
 
 };

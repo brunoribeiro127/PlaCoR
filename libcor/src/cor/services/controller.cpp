@@ -16,7 +16,7 @@ using namespace ev;
 
 namespace cor {
 
-Controller::Controller(std::string const& app_group, std::string const& context, unsigned int npods, Mailer *mlr) :
+Controller::Controller(std::string const& id, std::string const& app_group, std::string const& context, unsigned int npods, Mailer *mlr) :
     _app_group{app_group},
     _context{context},
     _npods{npods},
@@ -41,8 +41,7 @@ Controller::Controller(std::string const& app_group, std::string const& context,
     _psync = std::move(std::promise<bool>());
     _fsync = std::move(_psync.get_future());
 
-    // generate random name to controller
-    std::string name = "C" + random_string(9);
+    std::string name = "C" + id;
 
     // instanciate communication system
     _mbox = new ssrc::spread::Mailbox("4803", name, true, ssrc::spread::Mailbox::High);

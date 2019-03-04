@@ -1,7 +1,5 @@
 #ifdef COR_EXECUTOR_HPP
 
-#include <boost/hana.hpp>
-
 namespace cor {
 
 template <typename R, typename ... P>
@@ -50,15 +48,18 @@ void Executor<R(P...)>::Run(Args&&... args)
         _f = global::pod->LoadFunction<R(P...)>(_module, _function);
 
     // create task and get future
-    std::packaged_task<R(P...)> task(
-        boost::hana::if_(
-            std::is_void<R>{},
+    std::packaged_task<R(P...)> task;
+    if constexpr (std::is_void<R>{}) {
+        task = std::move(std::packaged_task<R(P...)>(
             [=](auto&&... args)
             {
                 global::pod->InsertActiveResource(std::this_thread::get_id(), _idp);
                 _f(std::forward<Args>(args)...);
                 global::pod->RemoveActiveResource(std::this_thread::get_id());
-            },
+            }
+        ));
+    } else {
+        task = std::move(std::packaged_task<R(P...)>(
             [=](auto&&... args)
             {
                 global::pod->InsertActiveResource(std::this_thread::get_id(), _idp);
@@ -66,8 +67,8 @@ void Executor<R(P...)>::Run(Args&&... args)
                 global::pod->RemoveActiveResource(std::this_thread::get_id());
                 return ret;
             }
-        )
-    );
+        ));
+    }
     _future = task.get_future();
     
     // run task and assign the thread to the current resource

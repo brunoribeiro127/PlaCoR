@@ -23,7 +23,19 @@ ResourcePtr<T> Pod::GetLocalResource(idp_t idp)
 }
 
 template <typename T, typename ... Args>
-ResourcePtr<T> Pod::Create(idp_t ctx, std::string const& name, Args&& ... args)
+ResourcePtr<T> Pod::CreateLocal(idp_t ctx, std::string const& name, Args&& ... args)
+{
+    return _ctrl->CreateLocal<T>(ctx, name, std::forward<Args>(args)...);
+}
+
+template <typename T, typename ... Args>
+idp_t Pod::CreateRemote(idp_t ctx, std::string const& name, Args&& ... args)
+{
+    return _ctrl->CreateRemote<T>(ctx, name, std::forward<Args>(args)...);
+}
+
+template <typename T, typename ... Args>
+idp_t Pod::Create(idp_t ctx, std::string const& name, Args&& ... args)
 {
     return _ctrl->Create<T>(ctx, name, std::forward<Args>(args)...);
 }

@@ -1,7 +1,6 @@
 #include "cor/elements/sbarrier.hpp"
 
 #include "cor/system/system.hpp"
-#include "cor/elements/pod.hpp"
 
 namespace cor {
 

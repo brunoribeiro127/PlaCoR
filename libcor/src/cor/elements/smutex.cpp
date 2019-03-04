@@ -1,7 +1,6 @@
 #include "cor/elements/smutex.hpp"
 
 #include "cor/system/system.hpp"
-#include "cor/elements/pod.hpp"
 
 namespace cor {
 

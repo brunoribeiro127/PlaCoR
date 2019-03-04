@@ -1,5 +1,7 @@
 #ifdef COR_RESOURCE_PTR_HPP
 
+//#include "cor/services/consistency_object.hpp"
+
 namespace cor {
 
 template <typename T>

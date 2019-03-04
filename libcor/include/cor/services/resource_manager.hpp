@@ -35,10 +35,16 @@ public:
     void CreateMetaDomain(std::string const& ctrl);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
+    ResourcePtr<T> CreateLocal(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
 
     template <typename T, typename ... Args>
-    ResourcePtr<T> Create(idp_t idp, idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
+    idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t Create(idp_t idp, idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T>
     ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc, std::string const& ctrl);
@@ -122,6 +128,8 @@ protected:
     void SendTokenAck(idp_t idp, std::string const& replier);
 
 private:
+    void SearchResource(idp_t idp);
+
     void JoinResourceGroup(idp_t idp);
     void LeaveResourceGroup(idp_t idp);
 
@@ -142,6 +150,9 @@ private:
     std::map<idp_t, std::condition_variable> _sync_gfind;
     std::map<idp_t, std::condition_variable> _sync_replicas;
     std::map<idp_t, std::condition_variable> _sync_free;
+
+    std::map<idp_t, std::tuple<unsigned int, unsigned int, std::string>> _sr_vars;
+    std::map<idp_t, std::condition_variable> _sr_cv;
 
     std::map<idp_t, std::pair<unsigned int, unsigned int>> _sg_vars;
     std::map<idp_t, std::condition_variable> _sg_cv;

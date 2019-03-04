@@ -21,7 +21,7 @@ class Mailer
 friend class ResourceManager;
 
 public:
-    Mailer(std::string const& app_group);
+    explicit Mailer(std::string const& id, std::string const& app_group);
     ~Mailer();
 
     void StartService();

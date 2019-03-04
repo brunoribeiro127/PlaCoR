@@ -23,9 +23,21 @@ ResourcePtr<T> Controller::CreateReference(idp_t idp, idp_t ctx, std::string con
 }
 
 template <typename T, typename ... Args>
-ResourcePtr<T> Controller::Create(idp_t ctx, std::string const& name, Args&& ... args)
+ResourcePtr<T> Controller::CreateLocal(idp_t ctx, std::string const& name, Args&& ... args)
 {
-    return _rsc_mgr->Create<T>(ctx, name, GetName(), std::forward<Args>(args)...);
+    return _rsc_mgr->CreateLocal<T>(ctx, name, GetName(), std::forward<Args>(args)...);
+}
+
+template <typename T, typename ... Args>
+idp_t Controller::CreateRemote(idp_t ctx, std::string const& name, Args&& ... args)
+{
+    return _rsc_mgr->CreateRemote<T>(ctx, name, std::forward<Args>(args)...);
+}
+
+template <typename T, typename ... Args>
+idp_t Controller::Create(idp_t ctx, std::string const& name, Args&& ... args)
+{
+    return _rsc_mgr->Create<T>(ctx, name, std::forward<Args>(args)...);
 }
 
 template <typename T, typename ... Args>
@@ -37,7 +49,7 @@ ResourcePtr<T> Controller::CreateCollective(idp_t ctx, std::string const& name, 
     auto first = GetCreateCollectiveFirst(_context);
 
     if (first) {
-        rsc_ptr = Create<T>(ctx, name, std::forward<Args>(args)...);
+        rsc_ptr = CreateLocal<T>(ctx, name, std::forward<Args>(args)...);
         SendCreateCollectiveIdp(_context, rsc_ptr->Idp());
     } else {
         auto idp = GetCreateCollectiveIdp(_context);

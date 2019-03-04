@@ -1,7 +1,6 @@
 #include "cor/elements/srwmutex.hpp"
 
 #include "cor/system/system.hpp"
-#include "cor/elements/pod.hpp"
 
 namespace cor {
 

@@ -1,6 +1,6 @@
 add_executable(corun corun.cpp host_file_parser.cpp)
 
-target_compile_features(corun PUBLIC cxx_std_14)
+target_compile_features(corun PUBLIC cxx_std_17)
 set_target_properties(corun PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(corun PROPERTIES COMPILE_FLAGS -O2)
 

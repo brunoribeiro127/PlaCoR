@@ -53,6 +53,8 @@ protected:
 
     void TokenAck();
 
+    bool IsOwner();
+
     // interface to ResourcePtr
     void IncrementLocalReferenceCounter();
     void DecrementLocalReferenceCounter();

@@ -408,6 +408,24 @@ void ResourceManager::HandleSynchronizeStaticGroup(idp_t comm)
         _sg_cv[comm].notify_all();
 }
 
+void ResourceManager::SearchResource(idp_t idp)
+{
+    auto total_pods = _ctrl->GetTotalPods();
+    
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        _sr_vars.emplace(idp, std::make_tuple(0, total_pods, ""));
+    }
+
+    _ctrl->SendSearchResourceRequest(idp);
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        while (std::get<0>(_sr_vars[idp]) != std::get<1>(_sr_vars[idp]))
+            _sr_cv[idp].wait(lk);
+    }
+}
+
 /*
 void ResourceManager::DummyInsertWorldContext(idp_t idp, std::string const& name, Resource *rsc, std::string const& ctrl)
 {

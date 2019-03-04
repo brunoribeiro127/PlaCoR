@@ -1,6 +1,6 @@
 add_library(libcor SHARED "")
 
-target_compile_features(libcor PUBLIC cxx_std_14)
+target_compile_features(libcor PUBLIC cxx_std_17)
 set_target_properties(libcor PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(libcor PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libcor PROPERTIES LIBRARY_OUTPUT_NAME "cor")
