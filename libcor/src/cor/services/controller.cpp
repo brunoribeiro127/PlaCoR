@@ -49,7 +49,6 @@ Controller::Controller(std::string const& id, std::string const& app_group, std:
     _evread = new Event(*_base, _mbox->descriptor(), Events::Read | Events::Persist, [this](){ HandleMessage(); });
 
     _smsg.add(_msg);
-    //std::cout << _mbox->private_group() << std::endl;
 }
 
 Controller::~Controller()
@@ -334,6 +333,14 @@ void Controller::HandleRegularMessage()
 
         case MsgType::StaticGroupSynchronize:
             HandleStaticGroupSynchronize();
+            break;
+
+        case MsgType::SearchResourceRequest:
+            HandleSearchResourceRequest();
+            break;
+
+        case MsgType::SearchResourceReply:
+            HandleSearchResourceReply();
             break;
 
         case MsgType::FinalizeContext:
@@ -1129,6 +1136,81 @@ void Controller::HandleStaticGroupSynchronize()
     t.detach();
 }
 
+void Controller::SendSearchResourceRequest(idp_t idp)
+{
+    ScatterMessage req;
+    GroupList dest;
+
+    // serialize idp
+    std::ostringstream oss(std::stringstream::binary);
+    cereal::PortableBinaryOutputArchive oarchive(oss);
+    oarchive(idp);
+    const std::string& tmp = oss.str();
+
+    // build message
+    req.set_safe();
+    req.set_type(underlying_cast(MsgType::SearchResourceRequest));
+    req.add(tmp.c_str(), tmp.size());
+    dest.add(_app_group);
+
+    // send message
+    _mbox->send(req, dest);
+}
+
+void Controller::HandleSearchResourceRequest()
+{
+    idp_t idp;
+    auto ctrl = _smsg.sender();
+
+    {
+        std::string sobj(_msg.begin(), _msg.size());
+        std::istringstream iss(sobj, std::istringstream::binary);
+        cereal::PortableBinaryInputArchive iarchive(iss);
+        iarchive(idp);
+    }
+
+    std::thread t(&ResourceManager::HandleSearchResource, _rsc_mgr, idp, ctrl);
+    t.detach();
+}
+
+void Controller::SendSearchResourceReply(idp_t idp, std::string const& info, std::string const& ctrl)
+{
+    ScatterMessage rep;
+    GroupList dest;
+
+    // serialize idp and info
+    std::ostringstream oss(std::stringstream::binary);
+    cereal::PortableBinaryOutputArchive oarchive(oss);
+    oarchive(idp, info);
+    const std::string& tmp = oss.str();
+
+    // build message
+    rep.set_safe();
+    rep.set_type(underlying_cast(MsgType::SearchResourceReply));
+    rep.add(tmp.c_str(), tmp.size());
+    dest.add(ctrl);
+
+    // send message
+    _mbox->send(rep, dest);
+}
+
+void Controller::HandleSearchResourceReply()
+{
+    idp_t idp;
+    std::string info;
+    auto ctrl = _smsg.sender();
+
+    {
+        std::string sobj(_msg.begin(), _msg.size());
+        std::istringstream iss(sobj, std::istringstream::binary);
+        cereal::PortableBinaryInputArchive iarchive(iss);
+        iarchive(idp, info);
+    }
+
+    std::thread t(&ResourceManager::HandleSearchResourceInfo, _rsc_mgr, idp, info);
+    t.detach();
+}
+
 std::string const& Controller::GetName() const
 {
     return _mbox->private_group();
@@ -1188,6 +1270,20 @@ idp_t Controller::GetIdpFromResourceGroup(std::string const& group)
     return std::stoul(group.substr(group.find("@") + 2));
 }
 
+std::string Controller::SearchResource(idp_t idp)
+{
+    return _rsc_mgr->SearchResource(idp);
+}
 
+bool Controller::ContainsResource(idp_t idp)
+{
+    return _rsc_mgr->ContainsResource(idp);
+}
+
+// to remove
+void Controller::Debug()
+{
+    std::cout << _mbox->private_group() << std::endl;
+}
 
 }

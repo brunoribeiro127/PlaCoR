@@ -408,22 +408,61 @@ void ResourceManager::HandleSynchronizeStaticGroup(idp_t comm)
         _sg_cv[comm].notify_all();
 }
 
-void ResourceManager::SearchResource(idp_t idp)
+std::string ResourceManager::SearchResource(idp_t idp)
 {
+    std::string ctrl;
     auto total_pods = _ctrl->GetTotalPods();
-    
-    {
-        std::unique_lock<std::mutex> lk(_mtx);
-        _sr_vars.emplace(idp, std::make_tuple(0, total_pods, ""));
-    }
-
-    _ctrl->SendSearchResourceRequest(idp);
 
     {
         std::unique_lock<std::mutex> lk(_mtx);
+
+        if (_sr_vars.find(idp) == _sr_vars.end()) {
+            _sr_vars.emplace(idp, std::make_tuple(0, total_pods, ""));
+            _ctrl->SendSearchResourceRequest(idp);
+        }
+
         while (std::get<0>(_sr_vars[idp]) != std::get<1>(_sr_vars[idp]))
             _sr_cv[idp].wait(lk);
+
+        ctrl = std::get<2>(_sr_vars[idp]);
     }
+
+    if (ctrl == "")
+        throw std::runtime_error("Resource " + std::to_string(idp) + " does not exists!");
+
+    return ctrl;
+}
+
+void ResourceManager::HandleSearchResource(idp_t idp, std::string ctrl)
+{
+    std::string info;
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+
+        auto it = _cst_objs.find(idp);
+        if (it != _cst_objs.end()) {
+            if (it->second->IsOwner())
+                info = _ctrl->GetName();
+            else
+                info = "";
+        }
+    }
+
+    _ctrl->SendSearchResourceReply(idp, info, ctrl);
+}
+
+void ResourceManager::HandleSearchResourceInfo(idp_t idp, std::string info)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+    
+    std::get<0>(_sr_vars[idp]) += 1;
+    if (info != "") {
+        std::get<2>(_sr_vars[idp]) = std::move(info);
+    }
+
+    if (std::get<0>(_sr_vars[idp]) == std::get<1>(_sr_vars[idp]))
+        _sr_cv[idp].notify_all();
 }
 
 /*

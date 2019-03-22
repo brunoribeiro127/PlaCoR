@@ -1,25 +1,11 @@
 #ifdef COR_CONTROLLER_HPP
 
-#include "cor/utils/utils.hpp"
-
 namespace cor {
-
-template <typename T>
-ResourcePtr<T> Controller::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc)
-{
-    return _rsc_mgr->AllocateResource<T>(idp, ctx, name, rsc, GetName());
-}
 
 template <typename T>
 ResourcePtr<T> Controller::GetLocalResource(idp_t idp)
 {
     return _rsc_mgr->GetLocalResource<T>(idp);
-}
-
-template <typename T>
-ResourcePtr<T> Controller::CreateReference(idp_t idp, idp_t ctx, std::string const& name)
-{
-    return _rsc_mgr->CreateReference<T>(idp, ctx, name, GetName());
 }
 
 template <typename T, typename ... Args>
@@ -29,15 +15,15 @@ ResourcePtr<T> Controller::CreateLocal(idp_t ctx, std::string const& name, Args&
 }
 
 template <typename T, typename ... Args>
-idp_t Controller::CreateRemote(idp_t ctx, std::string const& name, Args&& ... args)
-{
-    return _rsc_mgr->CreateRemote<T>(ctx, name, std::forward<Args>(args)...);
-}
-
-template <typename T, typename ... Args>
 idp_t Controller::Create(idp_t ctx, std::string const& name, Args&& ... args)
 {
-    return _rsc_mgr->Create<T>(ctx, name, std::forward<Args>(args)...);
+    return _rsc_mgr->Create<T>(ctx, name, GetName(), std::forward<Args>(args)...);
+}
+
+template <typename T>
+ResourcePtr<T> Controller::CreateReference(idp_t idp, idp_t ctx, std::string const& name)
+{
+    return _rsc_mgr->CreateReference<T>(idp, ctx, name, GetName());
 }
 
 template <typename T, typename ... Args>

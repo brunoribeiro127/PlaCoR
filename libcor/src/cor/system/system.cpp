@@ -4,5 +4,6 @@ namespace cor {
 namespace global {
 
 Pod *pod = nullptr;
+RpcManager *rpc = nullptr;
 
 }}

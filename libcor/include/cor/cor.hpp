@@ -4,6 +4,7 @@
 #include <string>
 
 #include "cor/system/system.hpp"
+#include "cor/system/macros.hpp"
 
 namespace cor {
 

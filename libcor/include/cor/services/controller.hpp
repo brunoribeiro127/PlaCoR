@@ -17,7 +17,6 @@
 namespace cor {
 
 class Resource;
-class RpcManager;
 class SessionManager;
 class ResourceManager;
 class ConsistencyObject;
@@ -40,9 +39,6 @@ public:
 
     idp_t GenerateIdp();
 
-    template <typename T>
-    ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc);
-
     ConsistencyObject *GetConsistencyObject(idp_t idp);
 
     std::string const& GetGlobalContext();
@@ -64,9 +60,6 @@ public:
     ResourcePtr<T> CreateLocal(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
-    idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
-
-    template <typename T, typename ... Args>
     idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
@@ -82,6 +75,13 @@ public:
 
     // accessed by SBarrier
     void SynchronizeStaticGroup(idp_t comm);
+
+    // accessed by Container
+    std::string SearchResource(idp_t idp);
+    bool ContainsResource(idp_t idp);
+
+    // to remove
+    void Debug();
 
     Controller() = delete;
     Controller(Controller const&) = delete;
@@ -162,7 +162,7 @@ protected:
 
     void SendSearchResourceRequest(idp_t idp);
     void HandleSearchResourceRequest();
-    void SendSearchResourceReply(idp_t idp);
+    void SendSearchResourceReply(idp_t idp, std::string const& info, std::string const& ctrl);
     void HandleSearchResourceReply();
 
 private:
@@ -210,6 +210,9 @@ private:
         StaticGroupCreate,
         StaticGroupSynchronize,
 
+        SearchResourceRequest,
+        SearchResourceReply,
+
         FinalizeContext,
         Finalize
     };
@@ -244,7 +247,6 @@ private:
     PageManager *_pg_mgr;
     ResourceManager *_rsc_mgr;
     SessionManager *_sess_mgr;
-    RpcManager *_rpc_mgr;
 
     // communication system
     ssrc::spread::Mailbox *_mbox;

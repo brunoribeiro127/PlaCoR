@@ -1,13 +1,17 @@
 #ifndef COR_SYSTEM_HPP
 #define COR_SYSTEM_HPP
 
-#include "cor/system/pod.hpp"
-
 namespace cor {
+
+class Pod;
+class RpcManager;
+
 namespace global {
 
-extern Pod *pod;
+    extern Pod *pod;
+    extern RpcManager *rpc;
 
-}}
+}
+}
 
 #endif

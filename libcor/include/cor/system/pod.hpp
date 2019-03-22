@@ -33,7 +33,7 @@ friend class SMutex;
 friend class SRWMutex;
 
 public:
-    explicit Pod(std::string const& app_group, std::string const& context, unsigned int npods);
+    explicit Pod(std::string const& id, std::string const& app_group, std::string const& context, unsigned int npods);
 
     ~Pod();
 
@@ -62,9 +62,6 @@ public:
     ResourcePtr<T> CreateLocal(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
-    idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
-
-    template <typename T, typename ... Args>
     idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
 
     template <typename T, typename ... Args>
@@ -75,6 +72,9 @@ public:
 
     idp_t Spawn(std::string const& context, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
 
+    // to remove
+    void Debug();
+
     Pod() = delete;
     Pod(const Pod&) = delete;
     Pod& operator=(const Pod&) = delete;
@@ -82,11 +82,9 @@ public:
     Pod& operator=(Pod&&) = delete;
 
 protected:
-    // accessed by ResourceFactory
-    idp_t GenerateIdp();
-
-    template <typename T>
-    ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc);
+    // accessed by Container
+    std::string SearchResource(idp_t idp);
+    bool ContainsResource(idp_t idp);
 
     // accessed by Organizer and Value
     ConsistencyObject *GetConsistencyObject(idp_t idp);

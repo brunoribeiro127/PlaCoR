@@ -1,5 +1,8 @@
 #ifdef COR_EXECUTOR_HPP
 
+#include "cor/system/system.hpp"
+#include "cor/system/pod.hpp"
+
 namespace cor {
 
 template <typename R, typename ... P>

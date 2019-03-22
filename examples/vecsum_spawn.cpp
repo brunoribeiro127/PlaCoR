@@ -7,8 +7,6 @@
 #include "cor/resources/communicator.hpp"
 #include "cor/message.hpp"
 
-#include <thread>
-
 extern "C"
 {
     void Main(int argc, char *argv[]);

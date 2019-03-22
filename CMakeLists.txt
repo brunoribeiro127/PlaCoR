@@ -14,6 +14,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 find_package(Spread 5 REQUIRED)
 find_package(SSRCSpread 1.0.15 REQUIRED)
 find_package(LibEvent 2 REQUIRED)
+find_package(LibEventThreads REQUIRED)
 find_package(Cereal REQUIRED)
 find_package(LibSSH 0.8 REQUIRED)
 

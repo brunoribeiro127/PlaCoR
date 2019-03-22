@@ -28,10 +28,25 @@ target_link_libraries(
         Cereal
 )
 
+add_library(test SHARED test.cpp)
+target_compile_features(test PUBLIC cxx_std_17)
+set_target_properties(test PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(test PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(test PROPERTIES COMPILE_FLAGS -O2)
+target_link_libraries(
+    test
+    PRIVATE
+        libcor
+        Spread
+        SSRCSpread
+        Cereal
+)
+
 install(
     TARGETS
         vecsum
         vecsum_spawn
+        test
     LIBRARY
         DESTINATION examples
 )

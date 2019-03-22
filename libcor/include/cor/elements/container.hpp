@@ -24,8 +24,13 @@ public:
     Container& operator=(Container&&) noexcept;
 
     template <typename T, typename ... Args>
-    //ResourcePtr<T> Create(idp_t ctx, std::string const& name, Args&& ... args);
-    void Create(idp_t ctx, std::string const& name, Args&& ... args);
+    ResourcePtr<T> CreateLocal(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
 
 protected:
     Container();

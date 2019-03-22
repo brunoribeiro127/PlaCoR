@@ -1,6 +1,7 @@
 #ifdef COR_VALUE_HPP
 
 #include "cor/system/system.hpp"
+#include "cor/system/pod.hpp"
 
 namespace cor {
 

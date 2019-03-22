@@ -1,25 +1,22 @@
 #include "cor/system/pod.hpp"
 
+#include "cor/utils/utils.hpp"
 #include "cor/services/mailer.hpp"
 
 using namespace dll;
 
 namespace cor {
 
-Pod::Pod(std::string const& app_group, std::string const& context, unsigned int npods) :
+Pod::Pod(std::string const& id, std::string const& app_group, std::string const& context, unsigned int npods) :
     _mlr{nullptr},
     _ctrl{nullptr},
     _modules{},
     _active_rscs{}
 {
-    // create random id
-    std::string id = random_string(9);
-
     // create a local instance of controller and mailer
     _mlr = new Mailer{id, app_group};
     _ctrl = new Controller{id, app_group, context, npods, _mlr};
 }
-
 
 Pod::~Pod()
 {
@@ -89,11 +86,6 @@ idp_t Pod::Spawn(std::string const& context, unsigned int npods, std::string con
     return _ctrl->Spawn(context, npods, parent, module, args, hosts);
 }
 
-idp_t Pod::GenerateIdp()
-{
-    return _ctrl->GenerateIdp();
-}
-
 ConsistencyObject *Pod::GetConsistencyObject(idp_t idp)
 {
     return _ctrl->GetConsistencyObject(idp);
@@ -161,6 +153,22 @@ void Pod::CreateStaticGroup(idp_t comm, unsigned int total_members)
 void Pod::SynchronizeStaticGroup(idp_t comm)
 {
     _ctrl->SynchronizeStaticGroup(comm);
+}
+
+std::string Pod::SearchResource(idp_t idp)
+{
+    return _ctrl->SearchResource(idp);
+}
+
+bool Pod::ContainsResource(idp_t idp)
+{
+    return _ctrl->ContainsResource(idp);
+}
+
+// to remove
+void Pod::Debug()
+{
+    _ctrl->Debug();
 }
 
 }

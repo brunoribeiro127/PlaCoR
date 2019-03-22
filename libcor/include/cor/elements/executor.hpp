@@ -7,7 +7,6 @@
 #include <functional>
 
 #include "cor/system/macros.hpp"
-#include "cor/system/system.hpp"
 
 #include "cereal/types/string.hpp"
 

@@ -38,19 +38,13 @@ public:
     ResourcePtr<T> CreateLocal(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
 
     template <typename T, typename ... Args>
-    idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
-
-    template <typename T, typename ... Args>
-    idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
-
-    template <typename T, typename ... Args>
-    idp_t Create(idp_t idp, idp_t ctx, std::string const& name, Args&& ... args);
-
-    template <typename T>
-    ResourcePtr<T> AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc, std::string const& ctrl);
+    idp_t Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
 
     template <typename T>
     ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name, std::string const& ctrl);
+
+    template <typename T>
+    void AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc, std::string const& ctrl);
 
     template <typename T>
     void CreateReplica(idp_t idp, std::string const& ctrl);
@@ -103,6 +97,10 @@ public:
     void SynchronizeStaticGroup(idp_t comm);
     void HandleSynchronizeStaticGroup(idp_t comm);
 
+    std::string SearchResource(idp_t idp);
+    void HandleSearchResource(idp_t idp, std::string ctrl);
+    void HandleSearchResourceInfo(idp_t idp, std::string info);
+
     ResourceManager() = delete;
     ResourceManager(ResourceManager const&) = delete;
     ResourceManager& operator=(ResourceManager const&) = delete;
@@ -128,8 +126,6 @@ protected:
     void SendTokenAck(idp_t idp, std::string const& replier);
 
 private:
-    void SearchResource(idp_t idp);
-
     void JoinResourceGroup(idp_t idp);
     void LeaveResourceGroup(idp_t idp);
 

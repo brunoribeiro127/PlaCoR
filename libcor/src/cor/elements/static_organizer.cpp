@@ -1,6 +1,7 @@
 #include "cor/elements/static_organizer.hpp"
 
 #include "cor/system/system.hpp"
+#include "cor/system/pod.hpp"
 #include "cor/services/consistency_object.hpp"
 #include "cor/message.hpp"
 

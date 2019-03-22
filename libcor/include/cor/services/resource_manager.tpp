@@ -11,42 +11,21 @@ ResourcePtr<T> ResourceManager::CreateLocal(idp_t ctx, std::string const& name, 
 {
     auto idp = GenerateIdp();
     auto rsc = new T(idp, std::forward<Args>(args)...);
-    return AllocateResource<T>(idp, ctx, name, rsc, ctrl);
+    AllocateResource<T>(idp, ctx, name, rsc, ctrl);
+    return GetLocalResource<T>(idp);
 }
 
 template <typename T, typename ... Args>
-idp_t ResourceManager::CreateRemote(idp_t ctx, std::string const& name, Args&& ... args)
+idp_t ResourceManager::Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args)
 {
-    SearchResource(ctx);
-    //CallCreate<T>(group, ctx, name, );
-    return 0;
-}
-
-template <typename T, typename ... Args>
-idp_t ResourceManager::Create(idp_t ctx, std::string const& name, Args&& ... args)
-{
-/*
     auto idp = GenerateIdp();
     auto rsc = new T(idp, std::forward<Args>(args)...);
     AllocateResource<T>(idp, ctx, name, rsc, ctrl);
     return idp;
-*/
-    return 0;
-}
-
-template <typename T, typename ... Args>
-idp_t ResourceManager::Create(idp_t idp, idp_t ctx, std::string const& name, Args&& ... args)
-{
-/*
-    auto rsc = new T(idp, std::forward<Args>(args)...);
-    AllocateResource<T>(idp, ctx, name, rsc, ctrl);
-    return idp;
-*/
-    return 0;
 }
 
 template <typename T>
-ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc, std::string const& ctrl)
+void ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc, std::string const& ctrl)
 {
     // get ctx resource
     auto ctx_rsc = GetResource(ctx);
@@ -91,8 +70,6 @@ ResourcePtr<T> ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::stri
     }
 
     //DummyInsertWorldContext(idp, name, rsc, ctrl);
-
-    return GetLocalResource<T>(idp);
 }
 
 template <typename T>

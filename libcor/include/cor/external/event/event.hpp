@@ -4,10 +4,16 @@
 #include <type_traits>
 #include <functional>
 
-#include <event.h>
-
 namespace ev
 {
+
+	#include <event.h>
+
+	namespace thread {
+
+		#include <event2/thread.h>
+
+	}
 
 	class EventBase;
 	class Event;

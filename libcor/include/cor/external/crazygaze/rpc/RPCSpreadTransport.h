@@ -3,7 +3,7 @@
 #include <ssrc/spread.h>
 using namespace ssrc::spread;
 
-#include "event/event.hpp"
+#include "cor/external/event/event.hpp"
 using namespace ev;
 
 #include "cor/utils/utils.hpp"
@@ -103,7 +103,6 @@ public:
     	_th_svc = std::move(std::thread(&BaseSpreadTransport::operator(), this));
 
 		_in_smsg.add(_in_msg);
-		std::cout << _mbox->private_group() << "\n";
 
     	return true;
 	}

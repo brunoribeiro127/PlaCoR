@@ -19,6 +19,7 @@ target_link_libraries(
         Spread
         SSRCSpread
         LibEvent
+        LibEventThreads
         Cereal
         LibSSH
 )

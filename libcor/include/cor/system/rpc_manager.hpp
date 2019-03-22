@@ -4,7 +4,9 @@
 #include <string>
 
 #include "cor/external/crazygaze/rpc/RPC.h"
-#include "cor/system/rpc_table.hpp"
+
+#include "cor/system/macros.hpp"
+#include "cor/system/rpc_class.hpp"
 
 namespace cor {
 
@@ -15,6 +17,8 @@ public:
     explicit RpcManager(std::string const& id);
     ~RpcManager();
 
+    void StartService();
+
     RpcManager() = delete;
     RpcManager(RpcManager const&) = delete;
     RpcManager& operator=(RpcManager const&) = delete;
@@ -22,17 +26,17 @@ public:
     RpcManager& operator=(RpcManager&&) noexcept = delete;
 
     template <typename T, typename ... Args>
-    idp_t CallCreate(std::string const& group, idp_t ctx, std::string const& name, Args&& ... args);
-
-    //void StopService();
+    idp_t Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
 
 private:
-    cz::rpc::Connection<RPC, RPC> *_con;
+    std::string _id;
+    RPC *_obj;
+    std::shared_ptr<cz::rpc::Connection<RPC, RPC>> _con;
 
 };
 
 }
 
-#include "cor/services/rpc_manager.tpp"
+#include "cor/system/rpc_manager.tpp"
 
 #endif
