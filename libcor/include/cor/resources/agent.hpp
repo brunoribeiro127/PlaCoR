@@ -31,9 +31,9 @@ public:
 
 protected:
     Agent();
-    //explicit Agent(idp_t idp, std::string const& function);
-    explicit Agent(idp_t idp, std::function<R(P...)> const& f);
-    explicit Agent(idp_t idp, std::string const& module, std::string const& function);
+
+    Agent(idp_t idp, std::function<R(P...)> const& f);
+    Agent(idp_t idp, std::string const& module, std::string const& function);
 
 private:
 	template <typename Archive>

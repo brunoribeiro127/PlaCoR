@@ -9,9 +9,15 @@
 extern "C"
 {
     void Main(int argc, char *argv[]);
+    void Test();
 }
 
 static constexpr idm_t MASTER = 0;
+
+void Test()
+{
+    std::cout << "Hello, World!" << std::endl;
+}
 
 void Main(int argc, char *argv[])
 {
@@ -47,8 +53,11 @@ void Main(int argc, char *argv[])
         auto msg = agent->Receive();
         auto group_idp = msg.Get<idp_t>();
 
-        auto rsc_idp = domain->Create<cor::Group>(group_idp, "test", "");
-        std::cout << rsc_idp << std::endl;
-    }
+        std::cout << group_idp << std::endl;
 
+        auto rsc_idp = domain->Create<cor::Agent<void()>>(group_idp, "", domain->GetModuleName(), "Test");
+        std::cout << rsc_idp << std::endl;
+        domain->Run<void()>(rsc_idp);
+
+    }
 }

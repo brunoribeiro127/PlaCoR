@@ -32,6 +32,9 @@ public:
     template <typename T, typename ... Args>
     idp_t CreateRemote(idp_t ctx, std::string const& name, Args&& ... args);
 
+    template <typename T, typename ... Args>
+    void Run(idp_t idp, Args&&... args);
+
 protected:
     Container();
     explicit Container(idp_t idp);

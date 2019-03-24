@@ -26,7 +26,10 @@ public:
     RpcManager& operator=(RpcManager&&) noexcept = delete;
 
     template <typename T, typename ... Args>
-    idp_t Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
+    idp_t Create(idp_t ctx, std::string const& name, std::string const& ctrl, Args&&... args);
+
+    template <typename T, typename ... Args>
+    void Run(idp_t idp, std::string const& ctrl, Args&&... args);
 
 private:
     std::string _id;

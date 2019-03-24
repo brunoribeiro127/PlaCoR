@@ -17,7 +17,8 @@ public:
     template <typename T, typename ... Args>
     idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
 
-private:
+    template <typename T, typename ... Args>
+    void Run(idp_t idp, Args&&... args);
 
 };
 

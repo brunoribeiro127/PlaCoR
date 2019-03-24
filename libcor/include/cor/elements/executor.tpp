@@ -24,15 +24,6 @@ Executor<R(P...)>::Executor(idp_t idp, std::string const& module, std::string co
     _f{}
 {}
 
-/*
-template <typename R, typename ... P>
-Executor<R(P...)>::Executor(idp_t idp, std::string const& function) :
-    _idp{idp},
-    _function{function},
-    _f{}
-{}
-*/
-
 template <typename R, typename ... P>
 Executor<R(P...)>::~Executor() = default;
 
