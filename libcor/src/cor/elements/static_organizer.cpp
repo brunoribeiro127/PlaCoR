@@ -105,6 +105,25 @@ size_t StaticOrganizer::GetTotalMembers() const
     return size;
 }
 
+std::vector<idp_t> StaticOrganizer::GetMemberList() const
+{
+    std::vector<idp_t> list;
+
+    // get consistency object
+    auto cobj = global::pod->GetConsistencyObject(_idp);
+    
+    // acquire read
+    cobj->AcquireRead();
+
+    for (auto const& member: _members)
+        list.push_back(member.first);
+
+    // release read
+    cobj->ReleaseRead();
+
+    return list;
+}
+
 idp_t StaticOrganizer::GetIdp(idm_t idm) const
 {
     // get consistency object

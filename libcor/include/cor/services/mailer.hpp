@@ -4,8 +4,11 @@
 #include <thread>
 #include <map>
 #include <deque>
+#include <queue>
 #include <mutex>
 #include <condition_variable>
+
+#include "cor/utils/utils.hpp"
 
 #include <ssrc/spread.h>
 #include "cor/external/event/event.hpp"
@@ -41,21 +44,17 @@ public:
     Mailer& operator=(Mailer&&) = delete;
 
 protected:
-    // methods to handle received messages
-    void HandleMessage();
-    void HandleRegularMessage();
-
-    // handle resource message
-    void HandleResourceMessage();
-
-    // stop controller services
-    void RequestServiceStop();
-
     // accessed by ResourceManager
     void CreateMailbox(idp_t idp);
     void DeleteMailbox(idp_t idp);
 
 private:
+    void Connect(std::string const& id);
+    void Close();
+
+    void HandleRead();
+    void HandleWrite();
+
     void JoinGroup(std::string const& group);
     void LeaveGroup(std::string const& group);
 
@@ -67,8 +66,7 @@ private:
 
     enum class MsgType: std::int16_t
     {
-        Message,
-        ServiceStop
+        Message
     };
 
     constexpr typename std::underlying_type<MsgType>::type underlying_cast(MsgType t) const noexcept
@@ -85,16 +83,30 @@ private:
     ssrc::spread::Mailbox *_mbox;
     ev::EventBase *_base;
     ev::Event *_evread;
+    ev::Event *_evwrite;
 
-    // variables to handle received messages
-    ssrc::spread::ScatterMessage _smsg;
-    ssrc::spread::Message _msg;
-    ssrc::spread::GroupList _groups;
-    ssrc::spread::MembershipInfo _info;
+    ssrc::spread::ScatterMessage _in_smsg;
+    ssrc::spread::GroupList _in_groups;
+    ssrc::spread::Message _in_msg;
 
+    ssrc::spread::ScatterMessage _out_smsg;
+    ssrc::spread::GroupList _out_groups;
+
+    // resources mailboxes
     std::map<idp_t, std::deque<Message>> _mailboxes;
     std::map<idp_t, std::condition_variable> _rwq;
     std::mutex _mtx;
+
+    struct Out
+	{
+        bool ongoingWrite = false;
+		std::queue<std::pair<std::vector<std::string>, std::string>> q;
+	};
+	utils::Monitor<Out> _out_queue;
+
+	// Hold the currently outgoing message
+	std::vector<std::string> _outgoing_groups;
+	std::string _outgoing_msg;
 
 };
 

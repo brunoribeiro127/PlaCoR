@@ -42,11 +42,18 @@ void Main(int argc, char *argv[])
         cor::Message msg;
         msg.SetType(0);
         msg.Add<idp_t>(group->Idp());
-
+/*
         for (int i = 1; i < comm_size; ++i)
             agent->Send(comm->GetIdp(i), msg);
 
-        std::cin.ignore();
+        std::cin.ingore();
+*/
+        agent->Send(comm->GetMemberList(), msg);
+
+        auto smsg  = agent->Receive();
+        auto group_idp = smsg.Get<idp_t>();
+
+        std::cout << group_idp << std::endl;
 
     } else {
 

@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
         auto comm = gPod->CreateCollective<cor::Communicator>(domain->Idp(), "", npods, total_members, parent);
 
         auto agent = gPod->CreateLocal<cor::Agent<void(int,char**)>>(comm->Idp(), "", module, "Main");
+
         agent->Run(argc, argv);
         agent->Wait();
         agent->Get();

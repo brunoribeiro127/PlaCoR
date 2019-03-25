@@ -21,22 +21,34 @@ Mailer::Mailer(std::string const& id, std::string const& app_group) :
     _rwq{},
     _mtx{}
 {
+    Connect(id);
+}
+
+Mailer::~Mailer()
+{
+    delete _evwrite;
+    delete _evread;
+    delete _base;
+    delete _mbox;
+}
+
+void Mailer::Connect(std::string const& id)
+{
     std::string name = "M" + id;
 
     // instanciate communication system
     _mbox = new ssrcspread::Mailbox("4803", name, true, ssrcspread::Mailbox::High);
     _base = new EventBase();
-    _evread = new Event(*_base, _mbox->descriptor(), Events::Read | Events::Persist, [this](){ HandleMessage(); });
+    _evread = new Event(*_base, _mbox->descriptor(), Events::Read | Events::Persist, [this](){ HandleRead(); });
+    _evwrite = new Event(*_base, _mbox->descriptor(), Events::Write | Events::Persist, [this](){ HandleWrite(); });
 
-    _smsg.add(_msg);
+    _in_smsg.add(_in_msg);
 }
 
-Mailer::~Mailer()
+void Mailer::Close()
 {
-
-    delete _evread;
-    delete _base;
-    delete _mbox;
+    _evread->end();
+    _base->loop_break();
 }
 
 void Mailer::StartService()
@@ -46,7 +58,7 @@ void Mailer::StartService()
 
 void Mailer::StopService()
 {
-    RequestServiceStop();
+    Close();
     _th_svc.join();
 }
 
@@ -58,9 +70,6 @@ void Mailer::operator()()
 
 void Mailer::SendMessage(idp_t idp, idp_t dest, Message& msg)
 {
-    ssrcspread::ScatterMessage smsg;
-    ssrcspread::GroupList groups;
-
     // set message sender
     msg.SetSender(idp);
 
@@ -68,46 +77,38 @@ void Mailer::SendMessage(idp_t idp, idp_t dest, Message& msg)
     std::ostringstream oss(std::stringstream::binary);
     cereal::PortableBinaryOutputArchive oarchive(oss);
     oarchive(msg);
-    std::string const& tmp = oss.str();
+    auto data = oss.str();
 
-    // build message
-    smsg.set_safe();
-    smsg.set_type(underlying_cast(MsgType::Message));
-    smsg.add(tmp.c_str(), tmp.size());
-
-    std::string group = GetMessageGroup(dest);
-    groups.add(group);
+    std::vector<std::string> groups;
+    groups.push_back(std::move(GetMessageGroup(dest)));
     
-    // send message
-    _mbox->send(smsg, groups);
+    auto trigger = _out_queue([&](Out& out)
+    {
+        if (out.ongoingWrite)
+        {
+            out.q.push(std::make_pair(std::move(groups), std::move(data)));
+            return false;
+        }
+        else
+        {
+            assert(out.q.size() == 0);
+            out.ongoingWrite = true;
+            _outgoing_groups = std::move(groups);
+            _outgoing_msg = std::move(data);
+            return true;
+        }
+    });
+
+    if (trigger) {
+        _evwrite->end();
+        _evwrite->start();
+    }
 }
 
 void Mailer::SendMessage(idp_t idp, std::vector<idp_t> const& dests, Message& msg)
 {
-    ssrcspread::ScatterMessage smsg;
-    ssrcspread::GroupList groups;
-
-    // set message sender
-    msg.SetSender(idp);
-
-    // serialize message
-    std::ostringstream oss(std::stringstream::binary);
-    cereal::PortableBinaryOutputArchive oarchive(oss);
-    oarchive(msg);
-    std::string const& tmp = oss.str();
-
-    // build message
-    smsg.set_safe();
-    smsg.set_type(underlying_cast(MsgType::Message));
-    smsg.add(tmp.c_str(), tmp.size());
-
-    for (auto const& dest: dests) {
-        std::string group = GetMessageGroup(dest);
-        groups.add(group);
-    }
-
-    // send message
-    _mbox->send(smsg, groups);
+    for (auto dest: dests)
+        SendMessage(idp, dest, msg);
 }
 
 Message Mailer::ReceiveMessage(idp_t idp)
@@ -117,10 +118,9 @@ Message Mailer::ReceiveMessage(idp_t idp)
     // if the mailbox does not have messages, then wait for messages
     if (_mailboxes[idp].empty())
         _rwq[idp].wait(lk, [this, idp]{ return !_mailboxes[idp].empty(); });
-
-    auto val(std::move(_mailboxes[idp].front()));
+    auto msg = std::move(_mailboxes[idp].front());
     _mailboxes[idp].pop_front();
-    return val;
+    return msg;
 }
 
 Message Mailer::ReceiveMessage(idp_t idp, idp_t source)
@@ -132,7 +132,7 @@ Message Mailer::ReceiveMessage(idp_t idp, idp_t source)
 
     while (!found) {
 
-        for (auto it = _mailboxes[idp].begin(); it != _mailboxes[idp].end(); ) {
+        for (auto it = _mailboxes[idp].begin(); !found && it != _mailboxes[idp].end(); ) {
             if (source == it->Sender()) {
                 msg = std::move(*it);
                 _mailboxes[idp].erase(it);
@@ -146,111 +146,6 @@ Message Mailer::ReceiveMessage(idp_t idp, idp_t source)
     }
 
     return msg;
-}
-
-
-void Mailer::HandleMessage()
-{
-    try {
-        _mbox->receive(_smsg, _groups);
-
-        // verify if is a regular message
-        if (_smsg.is_regular()) {
-            HandleRegularMessage();
-        }
-        // verify if is a membership message
-        else if (_smsg.is_membership()) {
-            _smsg.get_membership_info(_info);
-
-            if (_info.is_regular_membership()) {
-                /*
-                std::cout << "Received REGULAR membership for group " << _smsg.sender()
-                        << " with " << _groups.size()
-                        << " members , where I am member " << _smsg.type() << "\n";
-                
-                for (int i = 0; i < _groups.size(); ++i)
-                    std::cout << "\t" << _groups.group(i) << "\n";
-                */
-                if (_info.caused_by_join()) {
-                    // this message is received by the mailers of the group in which a member joined
-                    //std::cout << "Due to the JOIN of " << _info.changed_member() << " in group " << _smsg.sender() << "\n";
-                } else if (_info.caused_by_leave()) {
-                    // this message is received by the mailers of the group in which a member left
-                    //std::cout << "Due to the LEAVE of " << _info.changed_member() << "\n";
-                } else if (_info.caused_by_disconnect()) {
-                    // this message is received by the mailers of the group in which a member disconnected
-                    //std::cout << "Due to the DISCONNECT of " << _info.changed_member() << "\n";
-                } else if (_info.caused_by_network()) {
-                    // not important message to process for now
-                    //std::cout << "Due to NETWORK change";
-                }
-            } else if (_info.is_transition()) {
-                // not important message to process for now
-                //std::cout << "received TRANSITIONAL membership for group " << _smsg.sender() << "\n";
-            } else if (_info.is_self_leave()) {
-                // this message is received by the controller that left the group
-                //std::cout << "received membership message that left group " << _smsg.sender() << "\n";
-            }
-        }
-        // unkown type of message
-        else {
-            throw std::logic_error("unknown message type");
-        }
-    } catch (ssrcspread::Error const& e) {
-        e.print();
-        std::exit(0);
-    }
-}
-
-void Mailer::HandleRegularMessage()
-{
-    switch (MsgType(_smsg.type())) {
-
-        case MsgType::Message:
-            HandleResourceMessage();
-            break;
-
-        case MsgType::ServiceStop:
-            // needs to delete every resource linked to this pod
-            _evread->end();
-            _base->loop_break();
-            break;
-    }
-}
-
-void Mailer::HandleResourceMessage()
-{
-    Message msg;
-
-    // deserialize message
-    std::string sobj(_msg.begin(), _msg.size());
-    std::istringstream iss(sobj, std::istringstream::binary);
-    cereal::PortableBinaryInputArchive iarchive(iss);
-    iarchive(msg);
-
-    // get idp of receiver
-    auto idp = GetIdpFromMessageGroup(_groups[0]);
-
-    {
-        // insert message in resource mailbox
-        std::unique_lock<std::mutex> lk(_mtx);
-        _mailboxes[idp].push_back(std::move(msg));
-        _rwq[idp].notify_all();
-    }
-}
-
-void Mailer::RequestServiceStop()
-{
-    ssrcspread::ScatterMessage req;
-    ssrcspread::GroupList dest;
-
-    // build message
-    req.set_safe();
-    req.set_type(underlying_cast(MsgType::ServiceStop));
-    dest.add(_mbox->private_group());
-
-    // send message
-    _mbox->send(req, dest);
 }
 
 void Mailer::CreateMailbox(idp_t idp)
@@ -277,6 +172,77 @@ void Mailer::DeleteMailbox(idp_t idp)
         _mailboxes.erase(idp);
         _rwq.erase(idp);
     }
+}
+
+void Mailer::HandleRead()
+{
+    try {
+        _mbox->receive(_in_smsg, _in_groups);
+
+        // verify if is a regular message
+        if (_in_smsg.is_regular()) {
+
+            Message msg;
+
+            // deserialize message
+            std::string sobj(_in_msg.begin(), _in_msg.size());
+            std::istringstream iss(sobj, std::istringstream::binary);
+            cereal::PortableBinaryInputArchive iarchive(iss);
+            iarchive(msg);
+
+            // get idp of receiver
+            auto idp = GetIdpFromMessageGroup(_in_groups[0]);
+
+            {
+                // insert message in resource mailbox
+                std::unique_lock<std::mutex> lk(_mtx);
+                _mailboxes[idp].push_back(std::move(msg));
+                _rwq[idp].notify_all();
+            }
+        }
+    } catch (ssrcspread::Error const& e) {
+        e.print();
+        std::exit(0);
+    }
+}
+
+void Mailer::HandleWrite()
+{
+    // build message
+    _out_smsg.set_safe();
+    _out_smsg.set_type(underlying_cast(MsgType::Message));
+    _out_smsg.add(_outgoing_msg.c_str(), _outgoing_msg.size());
+
+    for (auto& group: _outgoing_groups)
+        _out_groups.add(group);
+
+    // send message
+    _mbox->send(_out_smsg, _out_groups);
+
+    // clear message content
+	_out_smsg.clear();
+	_out_groups.clear();
+
+    _out_queue([&](Out& out)
+    {
+        if (out.q.size())
+        {
+            auto pair = std::move(out.q.front());
+            _outgoing_groups = std::move(pair.first);
+            _outgoing_msg = std::move(pair.second);
+            out.q.pop();
+        }
+        else
+        {
+            out.ongoingWrite = false;
+            _outgoing_groups.clear();
+            _outgoing_msg.clear();
+        }
+    });
+
+    _evwrite->end();
+    if (_outgoing_msg.size())
+		_evwrite->start();
 }
 
 void Mailer::JoinMessageGroup(idp_t idp)

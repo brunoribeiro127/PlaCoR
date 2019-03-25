@@ -31,6 +31,7 @@ public:
 
     idp_t GetParent() const;
     std::size_t GetTotalMembers() const;
+    std::vector<idp_t> GetMemberList() const;
 
     idp_t GetIdp(idm_t idm) const;
     idp_t GetIdp(std::string const& name) const;

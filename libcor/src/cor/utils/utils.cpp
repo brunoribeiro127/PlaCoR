@@ -3,6 +3,9 @@
 #include <random>
 #include <algorithm>
 
+namespace cor {
+namespace utils {
+
 std::string random_string(std::size_t length)
 {
     std::string str(length, 0);
@@ -22,3 +25,5 @@ std::string random_string(std::size_t length)
 
     return str;
 }
+
+}}

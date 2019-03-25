@@ -13,7 +13,7 @@ void Initialize(std::string const& app_group, std::string const& context, unsign
     ev::thread::evthread_use_pthreads();
 
     // generate a random id for cor services
-    auto id = random_string(9);
+    auto id = utils::random_string(9);
 
     // create and start rpc manager
     global::rpc = new RpcManager(id);
