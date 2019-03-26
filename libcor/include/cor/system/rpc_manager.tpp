@@ -11,7 +11,7 @@ idp_t RpcManager::Create(idp_t ctx, std::string const& name, std::string const& 
 {
     static_assert(ResourceTraits<T>::valid, "ERROR");
 
-    if constexpr (ResourceTraits<T>::valid && RunTraits<T>::valid)
+    if constexpr (ResourceTraits<T>::valid)
         return (*_con).template call<typename ResourceTraits<T>::func_type>(
             *(*_con).transport,
             ctrl,
