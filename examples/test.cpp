@@ -9,14 +9,15 @@
 extern "C"
 {
     void Main(int argc, char *argv[]);
-    void Test();
+    void Test(idp_t idp);
 }
 
 static constexpr idm_t MASTER = 0;
 
-void Test()
+void Test(idp_t idp)
 {
-    std::cout << "Hello, World!" << std::endl;
+    //std::cout << "Hello, World!" << std::endl;
+    std::cout << "-->> " << idp << std::endl;
 }
 
 void Main(int argc, char *argv[])
@@ -62,9 +63,9 @@ void Main(int argc, char *argv[])
 
         std::cout << group_idp << std::endl;
 
-        auto rsc_idp = domain->Create<cor::Agent<void()>>(group_idp, "", domain->GetModuleName(), "Test");
+        auto rsc_idp = domain->Create<cor::Agent<void(idp_t)>>(group_idp, "", domain->GetModuleName(), "Test");
         std::cout << rsc_idp << std::endl;
-        domain->Run<void()>(rsc_idp);
+        domain->Run<void(idp_t)>(rsc_idp, 0);
 
     }
 }

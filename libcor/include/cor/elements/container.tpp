@@ -8,10 +8,24 @@
 
 namespace cor {
 
+template <typename T>
+ResourcePtr<T> Container::GetLocalResource(idp_t idp)
+{
+    return global::pod->GetLocalResource<T>(idp);
+}
+
 template <typename T, typename ... Args>
 ResourcePtr<T> Container::CreateLocal(idp_t ctx, std::string const& name, Args&& ... args)
 {
     return global::pod->CreateLocal(ctx, name, std::forward<Args>(args)...);
+}
+
+template <typename T, typename ... Args>
+idp_t Container::CreateRemote(idp_t ctx, std::string const& name, Args&& ... args)
+{
+    auto ctrl = global::pod->SearchResource(ctx);
+    ctrl[1] = 'R';
+    return global::rpc->Create<T>(ctx, name, ctrl, std::forward<Args>(args)...);
 }
 
 template <typename T, typename ... Args>
@@ -24,11 +38,15 @@ idp_t Container::Create(idp_t ctx, std::string const& name, Args&& ... args)
 }
 
 template <typename T, typename ... Args>
-idp_t Container::CreateRemote(idp_t ctx, std::string const& name, Args&& ... args)
+ResourcePtr<T> Container::CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args)
 {
-    auto ctrl = global::pod->SearchResource(ctx);
-    ctrl[1] = 'R';
-    return global::rpc->Create<T>(ctx, name, ctrl, std::forward<Args>(args)...);
+    return global::pod->CreateCollective<T>(ctx, name, total_members, std::forward<Args>(args)...);
+}
+
+template <typename T>
+ResourcePtr<T> Container::CreateReference(idp_t idp, idp_t ctx, std::string const& name)
+{
+    return global::pod->CreateReference<T>(idp, ctx, name);
 }
 
 template <typename T, typename ... Args>

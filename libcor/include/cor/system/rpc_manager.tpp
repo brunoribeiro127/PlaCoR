@@ -1,7 +1,5 @@
 #ifdef COR_RPC_MANAGER_HPP
 
-#include <iostream>
-
 #include "cor/system/rpc_table.hpp"
 
 namespace cor {

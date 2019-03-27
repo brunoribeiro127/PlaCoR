@@ -34,9 +34,4 @@ Pod * const GetPod()
     return global::pod;
 }
 
-void Spawn(std::string const& comm, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts)
-{
-    global::pod->Spawn(comm, npods, module, args, hosts);
-}
-
 }

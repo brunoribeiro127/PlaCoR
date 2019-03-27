@@ -52,7 +52,7 @@ private:
     template <typename Archive>
     void serialize(Archive& ar) 
     {
-        ar(_idp, _function);
+        ar(_idp, _module, _function);
     }
 
     idp_t _idp;

@@ -18,7 +18,6 @@ T Message::Get(std::size_t index) const
     return obj;
 }
 
-
 template <typename T>
 void Message::Add(T const& obj)
 {

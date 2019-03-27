@@ -20,10 +20,12 @@ CZRPC_ALLOW_RVALUE_REFS;
 #define RUN(...) REGISTERRPC(__VA_ARGS__)
 
 #define RPCTABLE_CLASS cor::RPC
-#define RPCTABLE_CONTENTS                                                                                   \
-    CREATE(Group, group, Create<cor::Group, std::string const&>)                                            \
-    CREATE(Data<std::vector<int>>, data, Create<cor::Data<std::vector<int>>, std::vector<int>>)             \
-    CREATE(Agent<void()>, agent, Create<cor::Agent<void()>, std::string const&, std::string const&>)        \
+#define RPCTABLE_CONTENTS                                                                                           \
+    CREATE(Group, group, Create<cor::Group, std::string const&>)                                                    \
+    CREATE(Data<std::vector<int>>, data, Create<cor::Data<std::vector<int>>, std::vector<int>>)                     \
+    CREATE(Agent<void(idp_t)>, agent1, Create<cor::Agent<void(idp_t)>, std::string const&, std::string const&>)     \
+    RUN(Agent<void(idp_t)>, run1, Run<cor::Agent<void(idp_t)>, idp_t>)                                              \
+    CREATE(Agent<void()>, agent, Create<cor::Agent<void()>, std::string const&, std::string const&>)                \
     RUN(Agent<void()>, run, Run<cor::Agent<void()>>)
 #include "cor/external/crazygaze/rpc/RPCGenerate.h"
 

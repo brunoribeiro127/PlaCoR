@@ -67,10 +67,7 @@ idp_t Pod::GetActiveResourceIdp()
 idp_t Pod::GetDomainIdp()
 {
     auto idp = GetActiveResourceIdp();
-    _ctrl->GetDomainIdp(idp);
-    auto ret = _ctrl->GetDomainIdp(idp);
-    _ctrl->GetDomainIdp(idp);
-    return ret;
+    return _ctrl->GetDomainIdp(idp);
 }
 
 idp_t Pod::GetDomainIdp(idp_t idp)
