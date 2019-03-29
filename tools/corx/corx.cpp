@@ -2,9 +2,7 @@
 #include <cstdlib>
 
 #include "cor/cor.hpp"
-#include "cor/resources/domain.hpp"
-#include "cor/resources/agent.hpp"
-#include "cor/resources/communicator.hpp"
+//#include "cor/system/system.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -29,12 +27,11 @@ int main(int argc, char *argv[])
     cor::Initialize(app_group, context, npods);
 
     {
-        auto domain = gPod->CreateLocal<cor::Domain>(cor::MetaDomain, "", module);
+        auto domain = cor::global::pod->CreateLocal<cor::Domain>(cor::MetaDomain, "", module);
 
-        auto comm = gPod->CreateCollective<cor::Communicator>(domain->Idp(), "", npods, total_members, parent);
+        auto comm = cor::global::pod->CreateCollective<cor::Communicator>(domain->Idp(), "", npods, total_members, parent);
 
-        auto agent = gPod->CreateLocal<cor::Agent<void(int,char**)>>(comm->Idp(), "", module, "Main");
-
+        auto agent = cor::global::pod->CreateLocal<cor::Agent<void(int,char**)>>(comm->Idp(), "", module, "Main");
         agent->Run(argc, argv);
         agent->Wait();
         agent->Get();

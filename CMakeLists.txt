@@ -10,6 +10,8 @@ if(APPLE)
 endif()
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
+add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
+
 # find dependencies
 find_package(Spread 5 REQUIRED)
 find_package(SSRCSpread 1.0.15 REQUIRED)
@@ -24,3 +26,4 @@ find_package(Boost 1.65 REQUIRED COMPONENTS program_options filesystem)
 add_subdirectory(libcor)
 add_subdirectory(tools)
 add_subdirectory(examples)
+add_subdirectory(tests)

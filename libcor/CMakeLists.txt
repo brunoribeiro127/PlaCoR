@@ -37,7 +37,9 @@ install(
     DESTINATION
         include
     FILES_MATCHING
-        PATTERN "*.[ht]pp"
+        PATTERN "*.hpp"
+        PATTERN "*.tpp"
+        PATTERN "*.h"
 )
 
 add_subdirectory(src)

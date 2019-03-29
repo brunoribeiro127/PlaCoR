@@ -37,16 +37,6 @@ idp_t Container::GetActiveResourceIdp()
     return global::pod->GetActiveResourceIdp();
 }
 
-idp_t Container::GetDomainIdp()
-{
-    return global::pod->GetDomainIdp();
-}
-
-idp_t Container::GetDomainIdp(idp_t idp)
-{
-    return global::pod->GetDomainIdp(idp);
-}
-
 idp_t Container::GetPredecessorIdp(idp_t idp)
 {
     return global::pod->GetPredecessorIdp(idp);

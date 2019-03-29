@@ -5,6 +5,7 @@
 
 #include "cor/system/system.hpp"
 #include "cor/system/macros.hpp"
+#include "cor/resources/domain.hpp"
 
 namespace cor {
 
@@ -12,10 +13,8 @@ namespace cor {
 
     void Finalize();
 
-    Pod * const GetPod();
+    ResourcePtr<Domain> GetDomain();
 
 }
-
-#define gPod (cor::GetPod())
 
 #endif

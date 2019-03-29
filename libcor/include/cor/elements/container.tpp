@@ -17,7 +17,7 @@ ResourcePtr<T> Container::GetLocalResource(idp_t idp)
 template <typename T, typename ... Args>
 ResourcePtr<T> Container::CreateLocal(idp_t ctx, std::string const& name, Args&& ... args)
 {
-    return global::pod->CreateLocal(ctx, name, std::forward<Args>(args)...);
+    return global::pod->CreateLocal<T>(ctx, name, std::forward<Args>(args)...);
 }
 
 template <typename T, typename ... Args>

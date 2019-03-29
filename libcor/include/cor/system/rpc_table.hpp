@@ -6,10 +6,11 @@ CZRPC_ALLOW_NON_CONST_LVALUE_REFS;
 CZRPC_ALLOW_RVALUE_REFS;
 
 #include "cor/resources/agent.hpp"
+#include "cor/resources/proto_agent.hpp"
 #include "cor/resources/barrier.hpp"
 #include "cor/resources/communicator.hpp"
 #include "cor/resources/data.hpp"
-//#include "cor/resources/domain.hpp"
+#include "cor/resources/domain.hpp"
 #include "cor/resources/group.hpp"
 #include "cor/resources/mutex.hpp"
 #include "cor/resources/rwmutex.hpp"

@@ -30,8 +30,6 @@ public:
     unsigned int GetTotalDomains();
 
     idp_t GetActiveResourceIdp();
-    idp_t GetDomainIdp();
-    idp_t GetDomainIdp(idp_t idp);
     idp_t GetPredecessorIdp(idp_t idp);
 
     template <typename T>

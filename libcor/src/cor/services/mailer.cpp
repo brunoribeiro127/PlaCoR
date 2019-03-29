@@ -3,6 +3,7 @@
 #include "cor/utils/utils.hpp"
 
 #include <sstream>
+#include <cassert>
 
 #include <cereal/archives/portable_binary.hpp>
 

@@ -22,13 +22,15 @@ using Vector = cor::Data<std::vector<T>>;
 
 void Main(int argc, char *argv[])
 {
+    auto domain = cor::GetDomain();
+
     // get local agent idp and resource
-    auto agent_idp = gPod->GetActiveResourceIdp();
-    auto agent = gPod->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
+    auto agent_idp = domain->GetActiveResourceIdp();
+    auto agent = domain->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
 
     // get agent rank
-    auto comm_idp = gPod->GetPredecessorIdp(agent_idp);
-    auto comm = gPod->GetLocalResource<cor::Communicator>(comm_idp);
+    auto comm_idp = domain->GetPredecessorIdp(agent_idp);
+    auto comm = domain->GetLocalResource<cor::Communicator>(comm_idp);
     auto comm_size = comm->GetTotalMembers();
     auto rank = comm->GetIdm(agent_idp);
 
@@ -40,7 +42,7 @@ void Main(int argc, char *argv[])
         for (int i = 1; i <= ARRAY_SIZE; ++i)
             array.push_back(i);
 
-        data = gPod->CreateLocal<Vector<int>>(gPod->GetDomainIdp(), "data", std::ref(array));
+        data = domain->CreateLocal<Vector<int>>(domain->Idp(), "data", std::ref(array));
 
         cor::Message msg;
         msg.SetType(0);
@@ -54,7 +56,7 @@ void Main(int argc, char *argv[])
         auto msg = agent->Receive();
         auto data_idp = msg.Get<idp_t>();
 
-        data = gPod->CreateReference<Vector<int>>(data_idp, gPod->GetDomainIdp(), "data");
+        data = domain->CreateReference<Vector<int>>(data_idp, domain->Idp(), "data");
     }
 
     std::size_t acc = 0;

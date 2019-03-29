@@ -22,22 +22,24 @@ using Vector = cor::Data<std::vector<T>>;
 
 void Main(int argc, char *argv[])
 {
-    auto agent_idp = gPod->GetActiveResourceIdp();
-    auto agent = gPod->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
+    auto domain = cor::GetDomain();
+
+    auto agent_idp = domain->GetActiveResourceIdp();
+    auto agent = domain->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
 
     cor::ResourcePtr<Vector<int>> data;
 
-    if (gPod->GetDomainIdp() == cor::MasterDomain) {
+    if (domain->Idp() == cor::MasterDomain) {
 
         std::vector<int> array;
         for (int i = 1; i <= ARRAY_SIZE; ++i)
             array.push_back(i);
 
-        data = gPod->CreateLocal<Vector<int>>(gPod->GetDomainIdp(), "data", std::ref(array));
+        data = domain->CreateLocal<Vector<int>>(domain->Idp(), "data", std::ref(array));
 
-        auto comm_idp = gPod->Spawn("test", NUM_AGENTS, "$HOME/placor/examples/libvecsum_spawn.dylib", {}, { "localhost" });
+        auto comm_idp = domain->Spawn("test", NUM_AGENTS, "$HOME/placor/examples/libvecsum_spawn.dylib", {}, { "localhost" });
 
-        auto comm = gPod->CreateReference<cor::Communicator>(comm_idp, gPod->GetDomainIdp(), "comm");
+        auto comm = domain->CreateReference<cor::Communicator>(comm_idp, domain->Idp(), "comm");
 
         cor::Message smsg;
         smsg.SetType(0);
@@ -58,14 +60,14 @@ void Main(int argc, char *argv[])
 
     } else {
 
-        auto comm_idp = gPod->GetPredecessorIdp(agent_idp);
-        auto comm = gPod->GetLocalResource<cor::Communicator>(comm_idp);
+        auto comm_idp = domain->GetPredecessorIdp(agent_idp);
+        auto comm = domain->GetLocalResource<cor::Communicator>(comm_idp);
         auto rank = comm->GetIdm(agent_idp);
 
         auto rmsg = agent->Receive();
         auto data_idp = rmsg.Get<idp_t>();
 
-        data = gPod->CreateReference<Vector<int>>(data_idp, gPod->GetDomainIdp(), "data");
+        data = domain->CreateReference<Vector<int>>(data_idp, domain->Idp(), "data");
 
         std::size_t acc = 0;
 

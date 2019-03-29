@@ -29,9 +29,9 @@ void Finalize()
     global::pod->Finalize();
 }
 
-Pod * const GetPod()
+ResourcePtr<Domain> GetDomain()
 {
-    return global::pod;
+    return global::pod->GetLocalResource<Domain>(global::pod->GetDomainIdp());
 }
 
 }
