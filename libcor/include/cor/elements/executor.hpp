@@ -33,7 +33,6 @@ public:
     void Run(Args&&... args);
 
     void Wait();
-
     R Get();
 
     void ChangeIdp(idp_t idp);

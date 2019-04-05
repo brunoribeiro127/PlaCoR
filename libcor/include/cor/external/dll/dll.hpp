@@ -89,8 +89,10 @@ namespace dll
         static DynamicLibrary *LoadDynamicLibrary(std::string const& library, Mode mode = Mode::Lazy)
         {
             void *handle = dlopen(library.c_str(), underlying_cast(mode));
-            if (!handle)
-                throw std::logic_error("Couldn't load the dynamic library \"" + library + "\"");
+            if (!handle) {
+                auto error = dlerror();
+                throw std::logic_error("Couldn't load the dynamic library \"" + library + "\": " +  error);
+            }
 
             return new DynamicLibrary(handle);
         }

@@ -9,7 +9,7 @@
 
 namespace cor {
 
-    void Initialize(std::string const& app_group, std::string const& context, unsigned int npods);
+    ResourcePtr<Domain> Initialize(std::string const& app_group, std::string const& context, unsigned int npods, std::string const& module);
 
     void Finalize();
 

@@ -24,14 +24,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    cor::Initialize(app_group, context, npods);
+    auto domain = cor::Initialize(app_group, context, npods, module);
 
     {
-        auto domain = cor::global::pod->CreateLocal<cor::Domain>(cor::MetaDomain, "", module);
+        auto comm = domain->CreateCollective<cor::Communicator>(domain->Idp(), "", npods, total_members, parent);
 
-        auto comm = cor::global::pod->CreateCollective<cor::Communicator>(domain->Idp(), "", npods, total_members, parent);
-
-        auto agent = cor::global::pod->CreateLocal<cor::Agent<void(int,char**)>>(comm->Idp(), "", module, "Main");
+        auto agent = domain->CreateLocal<cor::Agent<void(int,char**)>>(comm->Idp(), "", module, "Main");
         agent->Run(argc, argv);
         agent->Wait();
         agent->Get();

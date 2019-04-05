@@ -7,7 +7,7 @@
 
 namespace cor {
 
-void Initialize(std::string const& app_group, std::string const& context, unsigned int npods)
+ResourcePtr<Domain> Initialize(std::string const& app_group, std::string const& context, unsigned int npods, std::string const& module)
 {
     // enable libevent multithreaded environment
     ev::thread::evthread_use_pthreads();
@@ -22,6 +22,9 @@ void Initialize(std::string const& app_group, std::string const& context, unsign
     // create and initialize pod
     global::pod = new Pod(id, app_group, context, npods);
     global::pod->Initialize();
+
+    // create local domain
+    return global::pod->CreateLocal<Domain>(cor::MetaDomain, "", module);
 }
 
 void Finalize()
