@@ -359,7 +359,8 @@ void ResourceManager::CreateStaticGroup(idp_t comm, unsigned int total_members)
 {
     {
         std::unique_lock<std::mutex> lk(_mtx);
-        _sg_vars.emplace(comm, std::make_pair(0, total_members));
+        if (_sg_vars.find(comm) == _sg_vars.end())
+            _sg_vars.emplace(comm, std::make_pair(0, total_members));
         _sg_cv[comm].notify_all();
     }
 

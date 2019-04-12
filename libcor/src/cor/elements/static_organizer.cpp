@@ -17,12 +17,7 @@ StaticOrganizer::StaticOrganizer(idp_t idp, unsigned int total_members, idp_t pa
     _parent{parent},
     _members{},
     _next_idm{0}
-{
-/*
-    Message msg;
-    global::pod->SendMessage(_idp, _parent, msg);
-*/
-}
+{}
 
 StaticOrganizer::~StaticOrganizer() = default;
 

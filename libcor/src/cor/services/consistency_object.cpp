@@ -87,7 +87,7 @@ void ConsistencyObject::AcquireWrite()
 
     ++_wwriters;
 
-    while (_reading > 0 || _writing > 0 || _wwriters > 1)
+    while (_reading > 0 || _writing > 0)
         _wwq.wait(lk);
 
     if (!_token) {
@@ -120,12 +120,13 @@ void ConsistencyObject::ReleaseWrite()
     // stop writing
     --_writing;
 
-    if (_wwriters > 0)
+    if (_wwriters > 0) {
         // notify a waiting writer
         _wwq.notify_one();
-    else
+    } else {
         // notify all waiting readers
         _rwq.notify_all();
+    }
 
     // notify all waiting requests
     _reqwq.notify_all();

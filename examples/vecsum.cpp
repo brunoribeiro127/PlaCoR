@@ -1,11 +1,6 @@
 #include <iostream>
 
 #include "cor/cor.hpp"
-#include "cor/resources/domain.hpp"
-#include "cor/resources/communicator.hpp"
-#include "cor/resources/agent.hpp"
-#include "cor/resources/data.hpp"
-#include "cor/resources/group.hpp"
 
 extern "C"
 {

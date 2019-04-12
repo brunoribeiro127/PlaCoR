@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project(PlaCoR LANGUAGES CXX)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
 
@@ -19,11 +21,11 @@ find_package(LibEvent 2 REQUIRED)
 find_package(LibEventThreads REQUIRED)
 find_package(Cereal REQUIRED)
 find_package(LibSSH 0.8 REQUIRED)
-
 find_package(Boost 1.65 REQUIRED COMPONENTS program_options filesystem)
 
 # check subdirectories
 add_subdirectory(libcor)
 add_subdirectory(tools)
+add_subdirectory(modules)
 add_subdirectory(examples)
 add_subdirectory(tests)
