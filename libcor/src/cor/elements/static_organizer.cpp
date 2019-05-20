@@ -58,7 +58,7 @@ void StaticOrganizer::Join(idp_t idp, std::string const& name)
     // Synchronize join
     global::pod->CreateStaticGroup(_idp, _total_members);
 
-    if (idm == 0) {
+    if (idm == 0 && _parent != 0) {
         Message msg;
         global::pod->SendMessage(_idp, _parent, msg);
     }

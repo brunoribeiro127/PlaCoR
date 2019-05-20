@@ -10,7 +10,7 @@ Value<T>::Value() = default;
 
 template <typename T>
 template <typename ... Args>
-Value<T>::Value(idp_t idp, Args&&... args) : _idp{idp}, _value{std::forward<Args>(args)...} {}
+Value<T>::Value(idp_t idp, Args&&... args) : _idp{idp}, _value{std::make_unique<T>(std::forward<Args>(args)...)} {}
 
 template <typename T>
 Value<T>::~Value() = default;
@@ -50,9 +50,9 @@ void Value<T>::ReleaseRead() const
 }
 
 template <typename T>
-T& Value<T>::Get()
+T* Value<T>::Get()
 {
-    return _value;
+    return _value.get();
 }
 
 }

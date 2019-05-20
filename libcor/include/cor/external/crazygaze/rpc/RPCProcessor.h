@@ -15,7 +15,7 @@ protected:
 	template<typename L, typename R> friend struct Connection;
 
 	template<typename F, typename H>
-	void commit(Transport& transport, std::string& group, uint32_t rpcid, Stream& data, H&& handler)
+	void commit(Transport& transport, std::string group, uint32_t rpcid, Stream& data, H&& handler)
 	{
 		std::unique_lock<std::mutex> lk(m_mtx);
 		Header hdr;
@@ -236,7 +236,7 @@ public:
 	{
 	}
 
-	void processCall(Transport& transport, std::string& group, Stream& in, Header hdr)
+	void processCall(Transport& transport, std::string group, Stream& in, Header hdr)
 	{
 		auto&& info = Table<Type>::get(hdr.bits.rpcid);
 		info->dispatcher(m_obj, in, m_data, transport, group, hdr);
@@ -251,7 +251,7 @@ class InProcessor<void>
 {
 public:
 	InProcessor(void*) { }
-	void processCall(Transport& trp, std::string& group, Stream& in, Header hdr)
+	void processCall(Transport& trp, std::string group, Stream& in, Header hdr)
 	{
 		//assert(0 && "Incoming RPC not allowed for void local type");
 		details::Send::error(trp, group, hdr, "Peer doesn't have an object to process RPC calls");

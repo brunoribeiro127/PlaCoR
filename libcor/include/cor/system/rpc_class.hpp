@@ -2,6 +2,7 @@
 #define COR_RPC_CLASS_HPP
 
 #include <string>
+#include <future>
 
 #include "cor/system/macros.hpp"
 
@@ -19,6 +20,12 @@ public:
 
     template <typename T, typename ... Args>
     void Run(idp_t idp, Args&&... args);
+
+    template <typename T>
+    std::future<void> Wait(idp_t idp);
+
+    template <typename T, typename R>
+    std::future<R> Get(idp_t idp);
 
 };
 

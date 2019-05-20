@@ -75,7 +75,7 @@ void Main(int argc, char *argv[])
         auto array = data->Get();
 
         for (int i = rank * (ARRAY_SIZE/NUM_AGENTS); i < ((rank + 1) * (ARRAY_SIZE/NUM_AGENTS)); ++i)
-            acc += array[i];
+            acc += (*array)[i];
 
         data->ReleaseRead();
 

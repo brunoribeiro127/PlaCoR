@@ -19,6 +19,20 @@ void RPC::Run(idp_t idp, Args&&... args)
     rsc->Run(std::forward<Args>(args)...);
 }
 
+template <typename T>
+std::future<void> RPC::Wait(idp_t idp)
+{
+    auto rsc = global::pod->GetLocalResource<T>(idp);
+    return std::async(std::launch::async, &T::Wait, rsc);
+}
+
+template <typename T, typename R>
+std::future<R> RPC::Get(idp_t idp)
+{
+    auto rsc = global::pod->GetLocalResource<T>(idp);
+    return std::async(std::launch::async, &T::Get, rsc);
+}
+
 }
 
 #endif

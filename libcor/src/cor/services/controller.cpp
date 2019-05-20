@@ -334,6 +334,10 @@ void Controller::HandleRegularMessage()
         case MsgType::StaticGroupSynchronize:
             HandleStaticGroupSynchronize();
             break;
+        
+        case MsgType::StaticGroupCCIdp:
+            HandleStaticGroupCCIdp();
+            break;
 
         case MsgType::SearchResourceRequest:
             HandleSearchResourceRequest();
@@ -1133,6 +1137,42 @@ void Controller::HandleStaticGroupSynchronize()
     }
 
     std::thread t(&ResourceManager::HandleSynchronizeStaticGroup, _rsc_mgr, comm);
+    t.detach();
+}
+
+void Controller::SendStaticGroupCCIdp(idp_t comm, idp_t idp)
+{
+    ScatterMessage rep;
+    GroupList dest;
+
+    // serialize comm and idp
+    std::ostringstream oss(std::stringstream::binary);
+    cereal::PortableBinaryOutputArchive oarchive(oss);
+    oarchive(comm, idp);
+    const std::string& tmp = oss.str();
+
+    // build message
+    rep.set_safe();
+    rep.set_type(underlying_cast(MsgType::StaticGroupCCIdp));
+    rep.add(tmp.c_str(), tmp.size());
+    dest.add(_app_group);
+
+    // send message
+    _mbox->send(rep, dest);
+}
+
+void Controller::HandleStaticGroupCCIdp()
+{
+    idp_t comm, idp;
+
+    {
+        std::string sobj(_msg.begin(), _msg.size());
+        std::istringstream iss(sobj, std::istringstream::binary);
+        cereal::PortableBinaryInputArchive iarchive(iss);
+        iarchive(comm, idp);
+    }
+
+    std::thread t(&ResourceManager::HandleStaticGroupCCIdp, _rsc_mgr, comm, idp);
     t.detach();
 }
 

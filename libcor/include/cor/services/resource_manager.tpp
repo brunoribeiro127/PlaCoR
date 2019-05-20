@@ -99,6 +99,24 @@ ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ctx, std::strin
     return GetLocalResource<T>(idp);
 }
 
+template <typename T, typename ... Args>
+ResourcePtr<T> ResourceManager::CreateCollective(idm_t rank, idp_t comm, idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args)
+{
+    ResourcePtr<T> rsc_ptr;
+
+    if (rank == 0) {
+        rsc_ptr = CreateLocal<T>(ctx, name, ctrl, std::forward<Args>(args)...);
+        SendStaticGroupCCIdp(comm, rsc_ptr->Idp());
+    } else {
+        auto idp = GetStaticGroupCCIdp(comm);
+        rsc_ptr = CreateReference<T>(idp, ctx, name, ctrl);
+    }
+
+    SynchronizeStaticGroup(comm);
+
+    return rsc_ptr;
+}
+
 template <typename T>
 void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
 {
@@ -144,8 +162,10 @@ ResourcePtr<T> ResourceManager::GetLocalResource(idp_t idp)
     std::unique_lock<std::mutex> lk(_mtx);
 
     auto cst_obj = _cst_objs.find(idp);
-    if (cst_obj == _cst_objs.end())
+    if (cst_obj == _cst_objs.end()) {
+        std::cout << "Resource " << idp << " does not exist locally!" << std::endl;
         throw std::runtime_error("Resource " + std::to_string(idp) + " does not exist locally!");
+    }
 
     return ResourcePtr<T>{cst_obj->second};
 }

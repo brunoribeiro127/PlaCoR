@@ -9,6 +9,7 @@ namespace cor {
 namespace utils {
 
 std::string random_string(std::size_t length);
+std::string get_filename(std::string file_path, bool with_extension, char separator);
 
 template <class T>
 class Monitor

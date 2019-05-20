@@ -31,6 +31,12 @@ public:
     template <typename T, typename ... Args>
     void Run(idp_t idp, std::string const& ctrl, Args&&... args);
 
+    template <typename T>
+    void Wait(idp_t idp, std::string const& ctrl);
+
+    template <typename T, typename R>
+    R Get(idp_t idp, std::string const& ctrl);
+
 private:
     std::string _id;
     RPC *_obj;

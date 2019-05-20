@@ -43,6 +43,9 @@ public:
     template <typename T>
     ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name, std::string const& ctrl);
 
+    template <typename T, typename ... Args>
+    ResourcePtr<T> CreateCollective(idm_t rank, idp_t comm, idp_t ctx, std::string const& name, std::string const& ctrl, Args&& ... args);
+
     template <typename T>
     void AllocateResource(idp_t idp, idp_t ctx, std::string const& name, Resource *rsc, std::string const& ctrl);
 
@@ -93,6 +96,10 @@ public:
 
     void CreateStaticGroup(idp_t comm, unsigned int total_members);
     void HandleCreateStaticGroup(idp_t comm);
+
+    void SendStaticGroupCCIdp(idp_t comm, idp_t idp);
+    void HandleStaticGroupCCIdp(idp_t comm, idp_t idp);
+    idp_t GetStaticGroupCCIdp(idp_t comm);
 
     void SynchronizeStaticGroup(idp_t comm);
     void HandleSynchronizeStaticGroup(idp_t comm);
@@ -147,10 +154,13 @@ private:
     std::map<idp_t, std::condition_variable> _sync_replicas;
     std::map<idp_t, std::condition_variable> _sync_free;
 
+    // search resource
     std::map<idp_t, std::tuple<unsigned int, unsigned int, std::string>> _sr_vars;
     std::map<idp_t, std::condition_variable> _sr_cv;
 
+    // static group
     std::map<idp_t, std::pair<unsigned int, unsigned int>> _sg_vars;
+    std::map<idp_t, idp_t> _sg_cc;
     std::map<idp_t, std::condition_variable> _sg_cv;
 
 };

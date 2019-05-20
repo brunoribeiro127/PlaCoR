@@ -26,7 +26,7 @@ public:
     void AcquireRead() const;
     void ReleaseRead() const;
 
-    T& Get();
+    T* Get();
 
 protected:
     Value();
@@ -42,7 +42,7 @@ private:
     }
 
     idp_t _idp;
-    T _value;
+    std::unique_ptr<T> _value;
 
 };
 

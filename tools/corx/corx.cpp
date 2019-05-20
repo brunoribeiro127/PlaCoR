@@ -2,7 +2,6 @@
 #include <cstdlib>
 
 #include "cor/cor.hpp"
-//#include "cor/system/system.hpp"
 
 int main(int argc, char *argv[])
 {

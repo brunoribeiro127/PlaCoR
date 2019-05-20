@@ -50,6 +50,12 @@ ResourcePtr<T> Controller::CreateCollective(idp_t ctx, std::string const& name, 
     return rsc_ptr;
 }
 
+template <typename T, typename ... Args>
+ResourcePtr<T> Controller::CreateCollective(idm_t rank, idp_t comm, idp_t ctx, std::string const& name, Args&& ... args)
+{
+    return _rsc_mgr->CreateCollective<T>(rank, comm, ctx, name, GetName(), std::forward<Args>(args)...);
+}
+
 }
 
 #endif

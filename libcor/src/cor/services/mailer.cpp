@@ -136,14 +136,16 @@ Message Mailer::ReceiveMessage(idp_t idp, idp_t source)
         for (auto it = _mailboxes[idp].begin(); !found && it != _mailboxes[idp].end(); ) {
             if (source == it->Sender()) {
                 msg = std::move(*it);
-                _mailboxes[idp].erase(it);
+                it = _mailboxes[idp].erase(it);
                 found = true;
-            }
+            } else {
+                ++it;
+            } 
         }
 
         // if the message was not found, then wait for new messages
         if (!found)
-            _rwq[idp].wait(lk, [this, idp]{ return !_mailboxes[idp].empty(); });
+            _rwq[idp].wait(lk);
     }
 
     return msg;

@@ -8,7 +8,7 @@ namespace cor
         p->PeerAgent();
     }
 
-    Pool::Pool(int num_agents) :
+    Pool::Pool(std::size_t num_agents) :
         _num_agents{num_agents},
         _barrier{new Barrier(num_agents)},
         _fct{nullptr},
@@ -21,7 +21,7 @@ namespace cor
         auto group = domain->CreateLocal<cor::Group>(domain->Idp(), "", "");
         _group = group->Idp();
 
-        for (int i = 0; i < num_agents; ++i) {
+        for (std::size_t i = 0; i < num_agents; ++i) {
             auto agent = domain->CreateLocal<cor::ProtoAgent<void(void*)>>(group->Idp(), "", AgentFunc);
             agent->Run((void*)this);
             _agents.push_back(agent->Idp());
@@ -92,7 +92,7 @@ namespace cor
         }
     }
 
-    Pool::Barrier::Barrier(int count) :
+    Pool::Barrier::Barrier(std::size_t count) :
         _nthreads{count},
         _counter{0},
         _status{true},

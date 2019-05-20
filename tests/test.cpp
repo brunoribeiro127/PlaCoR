@@ -57,10 +57,10 @@ void Main(int argc, char *argv[])
         auto group_idp = msg.Get<idp_t>();
 
         std::cout << group_idp << std::endl;
-
+/*
         auto rsc_idp = domain->Create<cor::Agent<void(idp_t)>>(group_idp, "", domain->GetModuleName(), "Test");
         std::cout << rsc_idp << std::endl;
         domain->Run<void(idp_t)>(rsc_idp, 0);
-
+*/
     }
 }

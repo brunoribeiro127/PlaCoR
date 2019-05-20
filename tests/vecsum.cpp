@@ -60,7 +60,7 @@ void Main(int argc, char *argv[])
     auto array = data->Get();
 
     for (int i = rank * (ARRAY_SIZE/comm_size); i < ((rank + 1) * (ARRAY_SIZE/comm_size)); ++i)
-        acc += array[i];
+        acc += (*array)[i];
 
     data->ReleaseRead();
 

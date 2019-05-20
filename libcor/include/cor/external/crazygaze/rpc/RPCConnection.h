@@ -27,12 +27,12 @@ struct Connection : public BaseConnection
 	}
 
 	template<typename F, typename... Args>
-	auto call(Transport& transport, std::string const& group, uint32_t rpcid, Args&&... args)
+	auto call(Transport& transport, std::string group, uint32_t rpcid, Args&&... args)
 	{
 		return remotePrc.template call<F>(transport, group, rpcid, std::forward<Args>(args)...);
 	}
 
-	auto callGeneric(Transport& transport, std::string const& group, const std::string& name, const std::vector<Any>& args = std::vector<Any>())
+	auto callGeneric(Transport& transport, std::string group, const std::string& name, const std::vector<Any>& args = std::vector<Any>())
 	{
 		return remotePrc.callGeneric(transport, group, name, args);
 	}

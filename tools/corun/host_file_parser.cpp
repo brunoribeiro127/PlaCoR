@@ -10,10 +10,10 @@ void HostFileParser::parse(std::string const& filename, HostList &list)
         throw std::runtime_error("Couldn't open host file " + filename);
     }
 
-    std::regex hostname(R"(([a-zA-Z0-9\.]+):?:?)");
-    std::regex hostname_sshport(R"(([a-zA-Z0-9\.]+):([1-9][0-9]*|0):?)");
-    std::regex hostname_spreadport(R"(([a-zA-Z0-9\.]+)::([1-9][0-9]*|0))");
-    std::regex hostname_sshport_spreadport(R"(([a-zA-Z0-9\.]+):([1-9][0-9]*|0):([1-9][0-9]*|0))");
+    std::regex hostname(R"(([a-zA-Z0-9\.\-]+):?:?)");
+    std::regex hostname_sshport(R"(([a-zA-Z0-9\.\-]+):([1-9][0-9]*|0):?)");
+    std::regex hostname_spreadport(R"(([a-zA-Z0-9\.\-]+)::([1-9][0-9]*|0))");
+    std::regex hostname_sshport_spreadport(R"(([a-zA-Z0-9\.\-]+):([1-9][0-9]*|0):([1-9][0-9]*|0))");
 
     int lineno = 0;
     std::string line;

@@ -93,7 +93,7 @@ namespace details
 
 struct Send
 {
-	static void error(Transport& trp, std::string& group, Header hdr, const char* what)
+	static void error(Transport& trp, std::string group, Header hdr, const char* what)
 	{
 		Stream o;
 		o << hdr; // reserve space for the header
@@ -105,7 +105,7 @@ struct Send
 		trp.send(group, o.extract());
 	}
 
-	static void result(Transport& trp, std::string& group, Header hdr, Stream& o)
+	static void result(Transport& trp, std::string group, Header hdr, Stream& o)
 	{
 		hdr.bits.isReply = true;
 		hdr.bits.success = true;
@@ -150,7 +150,7 @@ struct Dispatcher<false, R>
 {
 
 	template <typename OBJ, typename F, typename P>
-	static void impl(OBJ& obj, F f, P&& params, InProcessorData& out, Transport& trp, std::string& group, Header hdr)
+	static void impl(OBJ& obj, F f, P&& params, InProcessorData& out, Transport& trp, std::string group, Header hdr)
 	{
 #if CZRPC_CATCH_EXCEPTIONS
 		try {
@@ -174,16 +174,16 @@ template <typename R>
 struct Dispatcher<true, R>
 {
 	template <typename OBJ, typename F, typename P>
-	static void impl(OBJ& obj, F f, P&& params, InProcessorData& out, Transport& trp, Header hdr)
+	static void impl(OBJ& obj, F f, P&& params, InProcessorData& out, Transport& trp, std::string group, Header hdr)
 	{
 		using Traits = FunctionTraits<F>;
 		auto resFt = callMethod(obj, f, std::move(params));
 		out.pending([&](InProcessorData::PendingFutures& pending)
 		{
 			unsigned counter = pending.counter++;
-			auto ft = then(std::move(resFt), [&out, &trp, hdr, counter](std::future<typename Traits::return_type> ft)
+			auto ft = then(std::move(resFt), [&out, &trp, group, hdr, counter](std::future<typename Traits::return_type> ft)
 			{
-				processReady(out, trp, counter, hdr, std::move(ft));
+				processReady(out, trp, group, counter, hdr, std::move(ft));
 			});
 
 			pending.futures.insert(std::make_pair(counter, std::move(ft)));
@@ -191,22 +191,33 @@ struct Dispatcher<true, R>
 	}
 
 	template<typename T>
-	static void processReady(InProcessorData& out, Transport& trp, std::string& group, unsigned counter, Header hdr, std::future<T> ft)
+	static void processReady(InProcessorData& out, Transport& trp, std::string group, unsigned counter, Header hdr, std::future<T> ft)
 	{
 		try
 		{
 			Stream o;
 			o << hdr;
-			auto r = ft.get();
-			if (hdr.isGenericRPC())
-				o << Any(r);
-			else
-				o << r;
+
+            if constexpr (!std::is_void<T>{}) {
+                auto r = ft.get();
+//std::cout << "PTARAS" << std::endl;
+			    if (hdr.isGenericRPC())
+				    o << Any(r);
+			    else
+				    o << r;
+            } else {
+                ft.get();
+//std::cout << "BADJARAS" << std::endl;
+            }
+//std::cout << "Send::result to " << group << std::endl;
 			Send::result(trp, group, hdr, o);
+//std::cout << "~Send::result to " << group << std::endl;
 		}
 		catch (const std::exception& e)
 		{
+//std::cout << "Send::error" << std::endl;
 			Send::error(trp, group, hdr, e.what());
+//std::cout << "~Send::error" << std::endl;
 		}
 
 		// Delete previously finished futures, and prepare to delete this one.
@@ -251,7 +262,7 @@ class TableImpl : public BaseTable
 
 	struct Info : public BaseInfo
 	{
-		std::function<void(Type&, Stream& in, InProcessorData& out, Transport& trp, std::string& group, Header hdr)> dispatcher;
+		std::function<void(Type&, Stream& in, InProcessorData& out, Transport& trp, std::string group, Header hdr)> dispatcher;
 	};
 
 
@@ -281,7 +292,7 @@ class TableImpl : public BaseTable
 		assert(m_rpcs.size() == 0);
 		auto info = std::make_unique<Info>();
 		info->name = "genericRPC";
-		info->dispatcher = [this](Type& obj, Stream& in, InProcessorData& out, Transport& trp, std::string& group, Header hdr) {
+		info->dispatcher = [this](Type& obj, Stream& in, InProcessorData& out, Transport& trp, std::string group, Header hdr) {
 			assert(hdr.isGenericRPC());
 			std::string name;
 			in >> name;
@@ -322,7 +333,7 @@ class TableImpl : public BaseTable
 
 		auto info = std::make_unique<Info>();
 		info->name = name;
-		info->dispatcher = [f](Type& obj, Stream& in, InProcessorData& out, Transport& trp, std::string& group, Header hdr) {
+		info->dispatcher = [f](Type& obj, Stream& in, InProcessorData& out, Transport& trp, std::string group, Header hdr) {
 			using Traits = FunctionTraits<F>;
 			typename Traits::param_tuple params;
 
@@ -363,7 +374,7 @@ class TableImpl : public BaseTable
 
 		auto info = std::make_unique<Info>();
 		info->name = name;
-		info->dispatcher = [f, info=info.get()](Type& obj, Stream& in, InProcessorData& out, Transport& trp, std::string& group, Header hdr) {
+		info->dispatcher = [f, info=info.get()](Type& obj, Stream& in, InProcessorData& out, Transport& trp, std::string group, Header hdr) {
 			using Traits = FunctionTraits<F>;
 			typename Traits::param_tuple params;
 			// All control RPCs are generic (and only generic)

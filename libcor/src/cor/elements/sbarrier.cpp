@@ -20,6 +20,9 @@ SBarrier& SBarrier::operator=(SBarrier&&) noexcept = default;
 
 void SBarrier::Synchronize()
 {
+    auto active_rsc_idp = global::pod->GetActiveResourceIdp();
+    auto sorg = global::pod->GetLocalResource<cor::StaticOrganizer>(_comm);
+    auto idm = sorg->GetIdm(active_rsc_idp);
     global::pod->SynchronizeStaticGroup(_comm);
 }
 

@@ -44,14 +44,23 @@ public:
     template <typename T, typename ... Args>
     idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
 
-    template <typename T, typename ... Args>
-    ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args);
-
     template <typename T>
     ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name);
 
     template <typename T, typename ... Args>
+    ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args);
+
+    template <typename T, typename ... Args>
+    ResourcePtr<T> CreateCollective(idp_t comm, idp_t ctx, std::string const& name, Args&& ... args);
+
+    template <typename T, typename ... Args>
     void Run(idp_t idp, Args&&... args);
+
+    template <typename T>
+    void Wait(idp_t idp);
+
+    template <typename T, typename R>
+    R Get(idp_t idp);
 
     idp_t Spawn(std::string const& context, unsigned int npods, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
 

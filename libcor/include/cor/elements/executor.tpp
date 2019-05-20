@@ -72,14 +72,26 @@ void Executor<R(P...)>::Run(Args&&... args)
 template <typename R, typename ... P>
 void Executor<R(P...)>::Wait()
 {
+//std::cout << "WAIT()" << std::endl;
     _thread.join();
     _future.wait();
+//std::cout << "~WAIT()" << std::endl;
 }
 
 template <typename R, typename ... P>
 R Executor<R(P...)>::Get()
 {
-    return _future.get();
+    //return _future.get();
+    if constexpr (std::is_void<R>{}) {
+//std::cout << "Get()" << std::endl;
+        _future.get();
+//std::cout << "~Get()" << std::endl;
+    } else {
+//std::cout << "Get()" << std::endl;
+        auto res = _future.get();
+        return res;
+//std::cout << "~Get()" << std::endl;
+    }
 }
 
 template <typename R, typename ... P>

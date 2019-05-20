@@ -40,6 +40,15 @@ ResourcePtr<T> Pod::CreateCollective(idp_t ctx, std::string const& name, unsigne
     return _ctrl->CreateCollective<T>(ctx, name, total_members, std::forward<Args>(args)...);
 }
 
+template <typename T, typename ... Args>
+ResourcePtr<T> Pod::CreateCollective(idp_t comm, idp_t ctx, std::string const& name, Args&& ... args)
+{
+    auto active_rsc_idp = GetActiveResourceIdp();
+    auto sorg = GetLocalResource<cor::StaticOrganizer>(comm);
+    auto rank = sorg->GetIdm(active_rsc_idp);
+    return _ctrl->CreateCollective<T>(rank, comm, ctx, name, std::forward<Args>(args)...);
+}
+
 }
 
 #endif

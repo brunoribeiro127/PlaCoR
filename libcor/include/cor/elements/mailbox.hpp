@@ -24,11 +24,15 @@ public:
     Mailbox(Mailbox&&) noexcept;
     Mailbox& operator=(Mailbox&&) noexcept;
 
-    void Send(idp_t dest, Message& msg) const;
-    void Send(std::vector<idp_t> const& dests, Message& msg) const;
-
+    void Send(idp_t dest, Message& msg) const;                          // Unicast
+    void Send(std::vector<idp_t> const& dests, Message& msg) const;     // Multicast
     Message Receive() const;
     Message Receive(idp_t source) const;
+
+    // Contextual Communication
+    void Broadcast(idp_t comm, Message& msg) const;                     // Broadcast
+    void Send(idm_t rank, idp_t comm, Message& msg) const;              // Contextual Unicast
+    Message Receive(idm_t rank, idp_t comm) const;
 
 protected:
     Mailbox();

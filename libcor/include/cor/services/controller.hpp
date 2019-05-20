@@ -62,11 +62,14 @@ public:
     template <typename T, typename ... Args>
     idp_t Create(idp_t ctx, std::string const& name, Args&& ... args);
 
+    template <typename T>
+    ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name);
+
     template <typename T, typename ... Args>
     ResourcePtr<T> CreateCollective(idp_t ctx, std::string const& name, unsigned int total_members, Args&& ... args);
 
-    template <typename T>
-    ResourcePtr<T> CreateReference(idp_t idp, idp_t ctx, std::string const& name);
+    template <typename T, typename ... Args>
+    ResourcePtr<T> CreateCollective(idm_t rank, idp_t comm, idp_t ctx, std::string const& name, Args&& ... args);
 
     idp_t Spawn(std::string const& context, unsigned int npods, idp_t parent, std::string const& module, std::vector<std::string> const& args, std::vector<std::string> const& hosts);
 
@@ -160,6 +163,9 @@ protected:
     void SendStaticGroupSynchronize(idp_t comm);
     void HandleStaticGroupSynchronize();
 
+    void SendStaticGroupCCIdp(idp_t comm, idp_t idp);
+    void HandleStaticGroupCCIdp();
+
     void SendSearchResourceRequest(idp_t idp);
     void HandleSearchResourceRequest();
     void SendSearchResourceReply(idp_t idp, std::string const& info, std::string const& ctrl);
@@ -209,6 +215,7 @@ private:
 
         StaticGroupCreate,
         StaticGroupSynchronize,
+        StaticGroupCCIdp,
 
         SearchResourceRequest,
         SearchResourceReply,

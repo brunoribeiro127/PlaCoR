@@ -35,4 +35,25 @@ Message Mailbox::Receive(idp_t source) const
     return global::pod->ReceiveMessage(_idp, source);
 }
 
+void Mailbox::Broadcast(idp_t comm, Message& msg) const
+{
+    auto sorg = global::pod->GetLocalResource<cor::StaticOrganizer>(comm);
+    auto dests = sorg->GetMemberList();
+    global::pod->SendMessage(_idp, dests, msg);
+}
+
+void Mailbox::Send(idm_t rank, idp_t comm, Message& msg) const
+{
+    auto sorg = global::pod->GetLocalResource<cor::StaticOrganizer>(comm);
+    auto dest = sorg->GetIdp(rank);
+    global::pod->SendMessage(_idp, dest, msg);
+}
+
+Message Mailbox::Receive(idm_t rank, idp_t comm) const
+{
+    auto sorg = global::pod->GetLocalResource<cor::StaticOrganizer>(comm);
+    auto source = sorg->GetIdp(rank);
+    return global::pod->ReceiveMessage(_idp, source);
+}
+
 }

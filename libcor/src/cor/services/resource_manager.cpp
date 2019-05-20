@@ -396,6 +396,7 @@ void ResourceManager::SynchronizeStaticGroup(idp_t comm)
         while (_sg_vars[comm].first != _sg_vars[comm].second)
             _sg_cv[comm].wait(lk);
         _sg_vars[comm].first = 0;
+        _sg_cc.erase(comm);
     }
 }
 
@@ -407,6 +408,33 @@ void ResourceManager::HandleSynchronizeStaticGroup(idp_t comm)
 
     if (_sg_vars[comm].first == _sg_vars[comm].second)
         _sg_cv[comm].notify_all();
+}
+
+void ResourceManager::SendStaticGroupCCIdp(idp_t comm, idp_t idp)
+{
+    _ctrl->SendStaticGroupCCIdp(comm, idp);
+}
+
+void ResourceManager::HandleStaticGroupCCIdp(idp_t comm, idp_t idp)
+{
+    std::unique_lock<std::mutex> lk(_mtx);
+    _sg_cc[comm] = idp;
+    _sg_cv[comm].notify_all();
+}
+
+idp_t ResourceManager::GetStaticGroupCCIdp(idp_t comm)
+{
+    idp_t idp;
+
+    {
+        std::unique_lock<std::mutex> lk(_mtx);
+        while (_sg_cc.find(comm) == _sg_cc.end())
+            _sg_cv[comm].wait(lk);
+
+        idp = _sg_cc[comm];
+    }
+
+    return idp;
 }
 
 std::string ResourceManager::SearchResource(idp_t idp)
