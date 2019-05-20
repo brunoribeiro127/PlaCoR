@@ -24,6 +24,8 @@ public:
     T* operator->() const;
     T& operator*() const;
 
+    idp_t GetIdp() const;
+
 protected:
     explicit ResourcePtr(ConsistencyObject *cst_obj);
 

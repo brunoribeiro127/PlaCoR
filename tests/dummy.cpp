@@ -1,6 +1,6 @@
 // System include(s):
 #include "cor/cor.hpp"
-#include "modules/pool.hpp"
+#include "units/pool.hpp"
 
 //#include <thread>
 #include <vector>
@@ -10,7 +10,7 @@
 //#include "include/CpuTimer.h"
 //#include "include/Rand.h"
 //#include "include/PoolAdditional.h"
-#include "modules/utils.hpp"
+#include "units/utils.hpp"
 
 // ROOT include(s):
 #include "TROOT.h"

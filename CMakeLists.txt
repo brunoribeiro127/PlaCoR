@@ -30,6 +30,6 @@ target_include_directories(ROOT::Core INTERFACE "${ROOT_INCLUDE_DIRS}")
 # check subdirectories
 add_subdirectory(libcor)
 add_subdirectory(tools)
-add_subdirectory(modules)
+add_subdirectory(units)
 add_subdirectory(examples)
 add_subdirectory(tests)

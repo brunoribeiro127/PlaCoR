@@ -5,6 +5,7 @@ target_compile_features(test_pool PUBLIC cxx_std_17)
 set_target_properties(test_pool PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_pool PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_pool PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_pool PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     test_pool
     PRIVATE
@@ -27,6 +28,7 @@ target_compile_features(test_root PUBLIC cxx_std_17)
 set_target_properties(test_root PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_root PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_root PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_root PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     test_root
     PRIVATE
@@ -51,6 +53,7 @@ target_compile_features(vecsum PUBLIC cxx_std_17)
 set_target_properties(vecsum PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(vecsum PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(vecsum PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(vecsum PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     vecsum
     PRIVATE
@@ -66,6 +69,7 @@ target_compile_features(vecsum_spawn PUBLIC cxx_std_17)
 set_target_properties(vecsum_spawn PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(vecsum_spawn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(vecsum_spawn PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(vecsum_spawn PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     vecsum_spawn
     PRIVATE
@@ -81,6 +85,7 @@ target_compile_features(test PUBLIC cxx_std_17)
 set_target_properties(test PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     test
     PRIVATE
@@ -96,6 +101,7 @@ target_compile_features(debug PUBLIC cxx_std_17)
 set_target_properties(debug PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(debug PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(debug PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(debug PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     debug
     PRIVATE
@@ -121,6 +127,7 @@ target_compile_features(dummy PUBLIC cxx_std_17)
 set_target_properties(dummy PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(dummy PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(dummy PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(dummy PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     dummy
     PRIVATE
@@ -145,6 +152,7 @@ target_compile_features(test_comm PUBLIC cxx_std_17)
 set_target_properties(test_comm PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_comm PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_comm PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_comm PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     test_comm
     PRIVATE
@@ -163,13 +171,14 @@ target_include_directories(
         $<INSTALL_INTERFACE:include>
 )
 ]]
-#[[
+
 # test_client
 add_library(test_client SHARED test_client.cpp)
 target_compile_features(test_client PUBLIC cxx_std_17)
 set_target_properties(test_client PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_client PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_client PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_client PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     test_client
     PRIVATE
@@ -194,6 +203,7 @@ target_compile_features(test_server PUBLIC cxx_std_17)
 set_target_properties(test_server PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_server PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_server PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_server PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     test_server
     PRIVATE
@@ -207,55 +217,6 @@ target_link_libraries(
 )
 target_include_directories(
     test_server
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include>
-)
-]]
-
-# clientRPC
-add_library(clientRPC SHARED clientRPC.cpp)
-target_compile_features(clientRPC PUBLIC cxx_std_17)
-set_target_properties(clientRPC PROPERTIES CXX_EXTENSIONS OFF)
-set_target_properties(clientRPC PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(clientRPC PROPERTIES COMPILE_FLAGS -O2)
-target_link_libraries(
-    clientRPC
-    PRIVATE
-        ROOT::Core
-        ${ROOT_LIBRARIES}
-        libcor
-        pool
-        Spread
-        SSRCSpread
-        Cereal
-)
-target_include_directories(
-    clientRPC
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include>
-)
-
-# serverRPC
-add_library(serverRPC SHARED serverRPC.cpp)
-target_compile_features(serverRPC PUBLIC cxx_std_17)
-set_target_properties(serverRPC PROPERTIES CXX_EXTENSIONS OFF)
-set_target_properties(serverRPC PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(serverRPC PROPERTIES COMPILE_FLAGS -O2)
-target_link_libraries(
-    serverRPC
-    PRIVATE
-        ROOT::Core
-        ${ROOT_LIBRARIES}
-        libcor
-        pool
-        Spread
-        SSRCSpread
-        Cereal
-)
-target_include_directories(
-    serverRPC
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
@@ -273,10 +234,8 @@ install(
         dummy
         test_comm
 ]]
-        #test_client
-        #test_server
-        clientRPC
-        serverRPC
+        test_client
+        test_server
     LIBRARY
         DESTINATION tests
 )

@@ -5,6 +5,7 @@ target_compile_features(module PUBLIC cxx_std_17)
 set_target_properties(module PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(module PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(module PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(module PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     module
     PRIVATE
@@ -20,6 +21,7 @@ target_compile_features(basicOperations PUBLIC cxx_std_17)
 set_target_properties(basicOperations PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(basicOperations PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(basicOperations PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(basicOperations PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     basicOperations
     PRIVATE
@@ -35,6 +37,7 @@ target_compile_features(callableModule PUBLIC cxx_std_17)
 set_target_properties(callableModule PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(callableModule PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(callableModule PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(callableModule PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     callableModule
     PRIVATE
@@ -50,6 +53,7 @@ target_compile_features(parallel PUBLIC cxx_std_17)
 set_target_properties(parallel PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(parallel PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(parallel PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(parallel PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     parallel
     PRIVATE
@@ -65,6 +69,7 @@ target_compile_features(spawn PUBLIC cxx_std_17)
 set_target_properties(spawn PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(spawn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(spawn PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(spawn PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     spawn
     PRIVATE
@@ -80,6 +85,7 @@ target_compile_features(client PUBLIC cxx_std_17)
 set_target_properties(client PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(client PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(client PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(client PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     client
     PRIVATE
@@ -95,6 +101,7 @@ target_compile_features(server PUBLIC cxx_std_17)
 set_target_properties(server PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(server PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(server PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(server PROPERTIES PREFIX "" SUFFIX "")
 target_link_libraries(
     server
     PRIVATE

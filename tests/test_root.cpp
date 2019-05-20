@@ -1,7 +1,7 @@
 #include "cor/cor.hpp"
-#include "modules/pool.hpp"
-#include "modules/timer.hpp"
-#include "modules/utils.hpp"
+#include "units/pool.hpp"
+#include "units/timer.hpp"
+#include "units/utils.hpp"
 
 // System include(s):
 #include <thread>
