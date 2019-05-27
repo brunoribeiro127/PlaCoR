@@ -5,7 +5,7 @@ target_compile_features(test_pool PUBLIC cxx_std_17)
 set_target_properties(test_pool PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_pool PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_pool PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(test_pool PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(test_pool PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     test_pool
     PRIVATE
@@ -28,7 +28,7 @@ target_compile_features(test_root PUBLIC cxx_std_17)
 set_target_properties(test_root PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_root PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_root PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(test_root PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(test_root PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     test_root
     PRIVATE
@@ -53,7 +53,7 @@ target_compile_features(vecsum PUBLIC cxx_std_17)
 set_target_properties(vecsum PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(vecsum PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(vecsum PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(vecsum PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(vecsum PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     vecsum
     PRIVATE
@@ -69,7 +69,7 @@ target_compile_features(vecsum_spawn PUBLIC cxx_std_17)
 set_target_properties(vecsum_spawn PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(vecsum_spawn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(vecsum_spawn PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(vecsum_spawn PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(vecsum_spawn PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     vecsum_spawn
     PRIVATE
@@ -85,7 +85,7 @@ target_compile_features(test PUBLIC cxx_std_17)
 set_target_properties(test PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(test PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(test PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     test
     PRIVATE
@@ -93,33 +93,7 @@ target_link_libraries(
         Spread
         SSRCSpread
         Cereal
-)
-
-# debug
-add_library(debug SHARED debug.cpp)
-target_compile_features(debug PUBLIC cxx_std_17)
-set_target_properties(debug PROPERTIES CXX_EXTENSIONS OFF)
-set_target_properties(debug PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(debug PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(debug PROPERTIES PREFIX "" SUFFIX "")
-target_link_libraries(
-    debug
-    PRIVATE
-        ROOT::Core
-        ${ROOT_LIBRARIES}
-        libcor
-        pool
-        Spread
-        SSRCSpread
-        Cereal
-)
-target_include_directories(
-    debug
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include>
-)
-
+))
 
 # dummy
 add_library(dummy SHARED dummy.cpp)
@@ -127,7 +101,7 @@ target_compile_features(dummy PUBLIC cxx_std_17)
 set_target_properties(dummy PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(dummy PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(dummy PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(dummy PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(dummy PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     dummy
     PRIVATE
@@ -152,12 +126,10 @@ target_compile_features(test_comm PUBLIC cxx_std_17)
 set_target_properties(test_comm PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_comm PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_comm PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(test_comm PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(test_comm PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     test_comm
     PRIVATE
-        ROOT::Core
-        ${ROOT_LIBRARIES}
         libcor
         pool
         Spread
@@ -170,7 +142,6 @@ target_include_directories(
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
 )
-]]
 
 # test_client
 add_library(test_client SHARED test_client.cpp)
@@ -178,12 +149,10 @@ target_compile_features(test_client PUBLIC cxx_std_17)
 set_target_properties(test_client PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_client PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_client PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(test_client PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(test_client PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     test_client
     PRIVATE
-        ROOT::Core
-        ${ROOT_LIBRARIES}
         libcor
         pool
         Spread
@@ -203,12 +172,10 @@ target_compile_features(test_server PUBLIC cxx_std_17)
 set_target_properties(test_server PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(test_server PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(test_server PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(test_server PROPERTIES PREFIX "" SUFFIX "")
+set_target_properties(test_server PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
     test_server
     PRIVATE
-        ROOT::Core
-        ${ROOT_LIBRARIES}
         libcor
         pool
         Spread
@@ -222,6 +189,98 @@ target_include_directories(
         $<INSTALL_INTERFACE:include>
 )
 
+# test_alias
+add_library(test_alias SHARED test_alias.cpp)
+target_compile_features(test_alias PUBLIC cxx_std_17)
+set_target_properties(test_alias PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(test_alias PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(test_alias PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_alias PROPERTIES PREFIX "lib" SUFFIX ".so")
+target_link_libraries(
+    test_alias
+    PRIVATE
+        libcor
+        pool
+        Spread
+        SSRCSpread
+        Cereal
+)
+target_include_directories(
+    test_alias
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+)
+]]
+# test_spawn
+add_library(test_spawn SHARED test_spawn.cpp)
+target_compile_features(test_spawn PUBLIC cxx_std_17)
+set_target_properties(test_spawn PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(test_spawn PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(test_spawn PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_spawn PROPERTIES PREFIX "lib" SUFFIX ".so")
+target_link_libraries(
+    test_spawn
+    PRIVATE
+        libcor
+        pool
+        Spread
+        SSRCSpread
+        Cereal
+)
+target_include_directories(
+    test_spawn
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+)
+
+# client_rpc
+add_library(client_rpc SHARED client_rpc.cpp)
+target_compile_features(client_rpc PUBLIC cxx_std_17)
+set_target_properties(client_rpc PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(client_rpc PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(client_rpc PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(client_rpc PROPERTIES PREFIX "lib" SUFFIX ".so")
+target_link_libraries(
+    client_rpc
+    PRIVATE
+        libcor
+        pool
+        Spread
+        SSRCSpread
+        Cereal
+)
+target_include_directories(
+    client_rpc
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+)
+
+# server_rpc
+add_library(server_rpc SHARED server_rpc.cpp)
+target_compile_features(server_rpc PUBLIC cxx_std_17)
+set_target_properties(server_rpc PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(server_rpc PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(server_rpc PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(server_rpc PROPERTIES PREFIX "lib" SUFFIX ".so")
+target_link_libraries(
+    server_rpc
+    PRIVATE
+        libcor
+        pool
+        Spread
+        SSRCSpread
+        Cereal
+)
+target_include_directories(
+    server_rpc
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+)
+
 install(
     TARGETS
 #[[
@@ -230,12 +289,15 @@ install(
         vecsum
         vecsum_spawn
         test
-        debug
         dummy
         test_comm
-]]
         test_client
         test_server
+        test_alias
+]]
+        test_spawn
+        client_rpc
+        server_rpc
     LIBRARY
         DESTINATION tests
 )

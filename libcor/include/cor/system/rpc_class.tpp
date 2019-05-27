@@ -3,6 +3,7 @@
 #include <iostream>
 #include "cor/system/system.hpp"
 #include "cor/system/pod.hpp"
+#include "cor/elements/executor.hpp"
 
 namespace cor {
 
@@ -15,22 +16,22 @@ idp_t RPC::Create(idp_t ctx, std::string const& name, Args&& ... args)
 template <typename T, typename ... Args>
 void RPC::Run(idp_t idp, Args&&... args)
 {
-    auto rsc = global::pod->GetLocalResource<T>(idp);
+    auto rsc = global::pod->GetLocalResource<Executor<T>>(idp);
     rsc->Run(std::forward<Args>(args)...);
 }
 
 template <typename T>
 std::future<void> RPC::Wait(idp_t idp)
 {
-    auto rsc = global::pod->GetLocalResource<T>(idp);
-    return std::async(std::launch::async, &T::Wait, rsc);
+    auto rsc = global::pod->GetLocalResource<Executor<T>>(idp);
+    return std::async(std::launch::async, &Executor<T>::Wait, rsc);
 }
 
-template <typename T, typename R>
+template <typename R, typename T>
 std::future<R> RPC::Get(idp_t idp)
 {
-    auto rsc = global::pod->GetLocalResource<T>(idp);
-    return std::async(std::launch::async, &T::Get, rsc);
+    auto rsc = global::pod->GetLocalResource<Executor<T>>(idp);
+    return std::async(std::launch::async, &Executor<T>::Get, rsc);
 }
 
 }

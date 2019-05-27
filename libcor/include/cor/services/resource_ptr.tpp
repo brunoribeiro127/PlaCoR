@@ -4,11 +4,13 @@ namespace cor {
 
 template <typename T>
 ResourcePtr<T>::ResourcePtr() :
+    _idp{0},
     _cst_obj{nullptr}
 {}
 
 template <typename T>
-ResourcePtr<T>::ResourcePtr(ConsistencyObject *cst_obj) :
+ResourcePtr<T>::ResourcePtr(idp_t idp, ConsistencyObject *cst_obj) :
+    _idp{idp},
     _cst_obj{cst_obj}
 {
     if (_cst_obj != nullptr)
@@ -24,6 +26,7 @@ ResourcePtr<T>::~ResourcePtr()
 
 template <typename T>
 ResourcePtr<T>::ResourcePtr(ResourcePtr<T> const& other) noexcept :
+    _idp{other._idp},
     _cst_obj{other._cst_obj}
 {
     if (_cst_obj != nullptr)
@@ -33,13 +36,16 @@ ResourcePtr<T>::ResourcePtr(ResourcePtr<T> const& other) noexcept :
 template <typename T>
 ResourcePtr<T>& ResourcePtr<T>::operator=(ResourcePtr<T> const& other) noexcept
 {
+    _idp = other._idp;
     _cst_obj = other._cst_obj;
+    other._idp = 0;
     other._cst_obj = nullptr;
     return *this;
 }
 
 template <typename T>
 ResourcePtr<T>::ResourcePtr(ResourcePtr<T>&& other) noexcept :
+    _idp{other._idp},
     _cst_obj{other._cst_obj}
 {
     if (_cst_obj != nullptr)
@@ -49,7 +55,9 @@ ResourcePtr<T>::ResourcePtr(ResourcePtr<T>&& other) noexcept :
 template <typename T>
 ResourcePtr<T>& ResourcePtr<T>::operator=(ResourcePtr&& other) noexcept
 {
+    _idp = other._idp;
     _cst_obj = other._cst_obj;
+    other._idp = 0;
     other._cst_obj = nullptr;
     return *this;
 }
@@ -70,6 +78,12 @@ T& ResourcePtr<T>::operator*() const
         throw std::runtime_error("Access to an invalid resource!");
 
     return *(dynamic_cast<T*>(_cst_obj->GetResource()));
+}
+
+template <typename T>
+idp_t ResourcePtr<T>::Idp() const
+{
+    return _idp;
 }
 
 }

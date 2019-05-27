@@ -5,9 +5,6 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-
 #include "host_file_parser.hpp"
 #include "cor/services/session_manager.hpp"
 
@@ -58,20 +55,11 @@ int main(int argc, char const *argv[])
         }
 
         if (!host_file.empty()) {
-/*
-            // insert full path to host_file and parse it
-            host_file.insert(0, "/");
-            host_file.insert(0, fs::current_path().native());
-*/
             HostFileParser::parse(host_file, hosts);
         } else {
             hosts.emplace_back("localhost", "22", "4803");
         }
-/*
-        // insert full path to module
-        module.insert(0, "/");
-        module.insert(0, fs::current_path().native());
-*/
+
         if (vm.count("debug")) {
             // Print program options
             std::cout << "Number of pods: " << np << "\n";

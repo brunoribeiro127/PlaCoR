@@ -50,9 +50,9 @@ ResourcePtr<T> Container::CreateCollective(idp_t ctx, std::string const& name, u
 }
 
 template <typename T, typename ... Args>
-ResourcePtr<T> Container::CreateCollective(idp_t comm, idp_t ctx, std::string const& name, Args&& ... args)
+ResourcePtr<T> Container::CreateCollective(idp_t clos, idp_t ctx, std::string const& name, Args&& ... args)
 {
-    return global::pod->CreateCollective<T>(comm, ctx, name, std::forward<Args>(args)...);
+    return global::pod->CreateCollective<T>(clos, ctx, name, std::forward<Args>(args)...);
 }
 
 template <typename T, typename ... Args>
@@ -71,12 +71,12 @@ void Container::Wait(idp_t idp)
     global::rpc->Wait<T>(idp, ctrl);
 }
 
-template <typename T, typename R>
-R Container::Get(idp_t idp)
+template <typename T>
+auto Container::Get(idp_t idp)
 {
     auto ctrl = global::pod->SearchResource(idp);
     ctrl[1] = 'R';
-    return global::rpc->Get<T,R>(idp, ctrl);
+    return global::rpc->Get<T>(idp, ctrl);
 }
 
 }

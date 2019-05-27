@@ -34,8 +34,8 @@ public:
     template <typename T>
     void Wait(idp_t idp, std::string const& ctrl);
 
-    template <typename T, typename R>
-    R Get(idp_t idp, std::string const& ctrl);
+    template <typename T>
+    auto Get(idp_t idp, std::string const& ctrl);
 
 private:
     std::string _id;

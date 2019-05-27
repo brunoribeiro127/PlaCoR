@@ -7,9 +7,9 @@ namespace cor {
 
 SBarrier::SBarrier() = default;
 
-SBarrier::SBarrier(idp_t idp, idp_t comm) :
+SBarrier::SBarrier(idp_t idp, idp_t clos) :
     _idp{idp},
-    _comm{comm}
+    _clos{clos}
 {}
 
 SBarrier::~SBarrier() = default;
@@ -21,9 +21,9 @@ SBarrier& SBarrier::operator=(SBarrier&&) noexcept = default;
 void SBarrier::Synchronize()
 {
     auto active_rsc_idp = global::pod->GetActiveResourceIdp();
-    auto sorg = global::pod->GetLocalResource<cor::StaticOrganizer>(_comm);
+    auto sorg = global::pod->GetLocalResource<cor::StaticOrganizer>(_clos);
     auto idm = sorg->GetIdm(active_rsc_idp);
-    global::pod->SynchronizeStaticGroup(_comm);
+    global::pod->SynchronizeStaticGroup(_clos);
 }
 
 }

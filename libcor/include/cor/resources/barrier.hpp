@@ -25,7 +25,7 @@ public:
 
 protected:
     Barrier();
-    explicit Barrier(idp_t idp, idp_t comm);
+    explicit Barrier(idp_t idp, idp_t clos);
 
 private:
     template <typename Archive>

@@ -12,11 +12,12 @@ DynamicOrganizer::DynamicOrganizer() = default;
 
 DynamicOrganizer::DynamicOrganizer(idp_t idp, std::string const& module) :
     _idp{idp},
-    _module{module},
+    _module{utils::get_filename(module)},
     _members{},
     _next_idm{0}
 {
-    LoadModule();
+    if (!module.empty())
+        global::pod->LoadModule(module);
 }
 
 DynamicOrganizer::~DynamicOrganizer() = default;
@@ -203,13 +204,6 @@ idm_t DynamicOrganizer::GetIdm(std::string const& name) const
     } else {
         throw std::runtime_error("Resource with name <" + name + "> does not exist!");
     }
-}
-
-void DynamicOrganizer::LoadModule() const
-{
-    // if has a module, then load it
-    if (!_module.empty())
-        global::pod->LoadModule(_module);
 }
 
 }

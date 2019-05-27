@@ -26,7 +26,7 @@ std::string random_string(std::size_t length)
     return str;
 }
 
-std::string get_filename(std::string file_path, bool with_extension = true, char separator = '/')
+std::string get_filename(std::string file_path, bool with_extension, char separator)
 {
 	auto dot_pos = file_path.rfind('.');
 	auto sep_pos = file_path.rfind(separator);

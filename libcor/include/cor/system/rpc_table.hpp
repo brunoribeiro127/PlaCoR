@@ -8,7 +8,7 @@ CZRPC_ALLOW_RVALUE_REFS;
 #include "cor/resources/agent.hpp"
 #include "cor/resources/proto_agent.hpp"
 #include "cor/resources/barrier.hpp"
-#include "cor/resources/communicator.hpp"
+#include "cor/resources/closure.hpp"
 #include "cor/resources/data.hpp"
 #include "cor/resources/domain.hpp"
 #include "cor/resources/group.hpp"
@@ -26,21 +26,26 @@ CZRPC_ALLOW_RVALUE_REFS;
 #define RPCTABLE_CONTENTS                                                                                           \
     CREATE(Group, group, Create<cor::Group, std::string const&>)                                                    \
     CREATE(Data<std::vector<int>>, data, Create<cor::Data<std::vector<int>>, std::vector<int>>)                     \
-                                                                                                                    \
     CREATE(Agent<void()>, agent, Create<cor::Agent<void()>, std::string const&, std::string const&>)                \
-    RUN(Agent<void()>, run, Run<cor::Agent<void()>>)                                                                \
-    WAIT(Agent<void()>, wait, Wait<cor::Agent<void()>>)                                                             \
-    GET(Agent<void()>, get, Get<cor::Agent<void()>, void>)                                                          \
-                                                                                                                    \
     CREATE(Agent<idp_t()>, agent1, Create<cor::Agent<idp_t()>, std::string const&, std::string const&>)             \
-    RUN(Agent<idp_t()>, run1, Run<cor::Agent<idp_t()>>)                                                             \
-    WAIT(Agent<idp_t()>, wait1, Wait<cor::Agent<idp_t()>>)                                                          \
-    GET(Agent<idp_t()>, get1, Get<cor::Agent<idp_t()>, idp_t>)                                                      \
-                                                                                                                    \
     CREATE(Agent<void(idp_t)>, agent2, Create<cor::Agent<void(idp_t)>, std::string const&, std::string const&>)     \
-    RUN(Agent<void(idp_t)>, run2, Run<cor::Agent<void(idp_t)>, idp_t>)                                              \
-    WAIT(Agent<void(idp_t)>, wait2, Wait<cor::Agent<void(idp_t)>>)                                                  \
-    GET(Agent<void(idp_t)>, get2, Get<cor::Agent<void(idp_t)>, void>)
+    CREATE(Agent<idp_t(idp_t)>, agent3, Create<cor::Agent<idp_t(idp_t)>, std::string const&, std::string const&>)   \
+                                                                                                                    \
+    RUN(Executor<void()>, run, Run<void()>)                                                                         \
+    RUN(Executor<idp_t()>, run1, Run<idp_t()>)                                                                      \
+    RUN(Executor<void(idp_t)>, run2, Run<void(idp_t), idp_t>)                                                       \
+    RUN(Executor<idp_t(idp_t)>, run3, Run<idp_t(idp_t), idp_t>)                                                     \
+                                                                                                                    \
+    WAIT(Executor<void()>, wait, Wait<void()>)                                                                      \
+    WAIT(Executor<idp_t()>, wait1, Wait<idp_t()>)                                                                   \
+    WAIT(Executor<void(idp_t)>, wait2, Wait<void(idp_t)>)                                                           \
+    WAIT(Executor<idp_t(idp_t)>, wait3, Wait<idp_t(idp_t)>)                                                         \
+                                                                                                                    \
+    GET(Executor<void()>, get, Get<void, void()>)                                                                   \
+    GET(Executor<idp_t()>, get1, Get<idp_t, idp_t()>)                                                               \
+    GET(Executor<void(idp_t)>, get2, Get<void, void(idp_t)>)                                                        \
+    GET(Executor<idp_t(idp_t)>, get3, Get<idp_t, idp_t(idp_t)>)
+
 #include "cor/external/crazygaze/rpc/RPCGenerate.h"
 
 namespace cor {
@@ -53,19 +58,19 @@ namespace cor {
 
     template <typename T, typename ENABLED = void>
     struct RunTraits {
-        using rsc_type = T;
+        using rsc_type = T; //type
         static constexpr bool valid = false;
     };
 
     template <typename T, typename ENABLED = void>
     struct WaitTraits {
-        using rsc_type = T;
+        using rsc_type = T; //type
         static constexpr bool valid = false;
     };
 
     template <typename T, typename ENABLED = void>
     struct GetTraits {
-        using rsc_type = T;
+        using rsc_type = T; //type
         static constexpr bool valid = false;
     };
 

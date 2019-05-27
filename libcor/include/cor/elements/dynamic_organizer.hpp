@@ -45,8 +45,6 @@ protected:
     DynamicOrganizer();
     explicit DynamicOrganizer(idp_t idp, std::string const& module);
 
-    void LoadModule() const;
-
 private:
     template <typename Archive>
     void serialize(Archive& ar)

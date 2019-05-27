@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include "cereal/types/string.hpp"
 #include "cereal/types/map.hpp"

@@ -24,12 +24,13 @@ public:
     T* operator->() const;
     T& operator*() const;
 
-    idp_t GetIdp() const;
+    idp_t Idp() const;
 
 protected:
-    explicit ResourcePtr(ConsistencyObject *cst_obj);
+    explicit ResourcePtr(idp_t idp, ConsistencyObject *cst_obj);
 
 private:
+    idp_t _idp;
     ConsistencyObject *_cst_obj;
 
 };

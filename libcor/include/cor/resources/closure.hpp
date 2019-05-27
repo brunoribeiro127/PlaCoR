@@ -1,5 +1,5 @@
-#ifndef COR_COMMUNICATOR_HPP
-#define COR_COMMUNICATOR_HPP
+#ifndef COR_CLOSURE_HPP
+#define COR_CLOSURE_HPP
 
 #include "cor/resources/resource.hpp"
 #include "cor/elements/static_organizer.hpp"
@@ -8,24 +8,24 @@
 
 namespace cor {
 
-class Communicator: public Resource, public StaticOrganizer
+class Closure: public Resource, public StaticOrganizer
 {
 
 friend class ResourceManager;
 friend class cereal::access;
 
 public:
-    ~Communicator();
+    ~Closure();
 
-    Communicator(const Communicator&) = delete;
-    Communicator& operator=(const Communicator&) = delete;
+    Closure(const Closure&) = delete;
+    Closure& operator=(const Closure&) = delete;
 
-    Communicator(Communicator&&) noexcept;
-    Communicator& operator=(Communicator&&) noexcept;
+    Closure(Closure&&) noexcept;
+    Closure& operator=(Closure&&) noexcept;
 
 protected:
-    Communicator();
-    explicit Communicator(idp_t idp, unsigned int total_members, idp_t parent);
+    Closure();
+    explicit Closure(idp_t idp, unsigned int total_members, idp_t parent);
 
 private:
     template <typename Archive>
@@ -41,6 +41,6 @@ private:
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-CEREAL_REGISTER_TYPE(cor::Communicator);
+CEREAL_REGISTER_TYPE(cor::Closure);
 
 #endif

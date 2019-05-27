@@ -1,8 +1,6 @@
 #ifndef COR_SBARRIER_HPP
 #define COR_SBARRIER_HPP
 
-#include <string>
-
 #include "cereal/access.hpp"
 
 #include "cor/system/macros.hpp"
@@ -27,17 +25,17 @@ public:
 
 protected:
     SBarrier();
-    explicit SBarrier(idp_t idp, idp_t comm);
+    explicit SBarrier(idp_t idp, idp_t clos);
 
 private:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(_idp, _comm);
+        ar(_idp, _clos);
     }
 
     idp_t _idp;
-    idp_t _comm;
+    idp_t _clos;
 
 };
 

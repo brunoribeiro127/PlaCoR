@@ -26,6 +26,8 @@ target_link_libraries(
         LibEvent
         Cereal
         LibSSH
+        -ldl
+        -lpthread
 )
 endif(CMAKE_SYSTEM_NAME MATCHES "SunOS")
 

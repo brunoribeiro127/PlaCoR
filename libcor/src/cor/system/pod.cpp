@@ -96,7 +96,7 @@ void Pod::LoadModule(std::string const& module)
     std::unique_lock<std::mutex> lk(_mtx);
     if (_modules.find(module) == _modules.end()) {
         auto dylib = DynamicLoader::LoadDynamicLibrary(module);
-        _modules.emplace(module, dylib);
+        _modules.emplace(utils::get_filename(module), dylib);
     }
 }
 

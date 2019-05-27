@@ -24,7 +24,7 @@ public:
     template <typename T>
     std::future<void> Wait(idp_t idp);
 
-    template <typename T, typename R>
+    template <typename R, typename T>
     std::future<R> Get(idp_t idp);
 
 };

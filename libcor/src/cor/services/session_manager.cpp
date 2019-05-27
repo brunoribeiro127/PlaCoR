@@ -33,7 +33,7 @@ void SessionManager::CreateRemoteSession(std::string const& host, std::string co
 
     {
         std::unique_lock<std::mutex> lk(_mtx);
-        _sessions.emplace_back(rs);
+        _sessions.push_back(rs);
     }
 }
 

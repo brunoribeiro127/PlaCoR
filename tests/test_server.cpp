@@ -7,6 +7,7 @@ extern "C"
     void Main(int argc, char *argv[]);
     void TestVoid();
     idp_t TestIdp();
+    idp_t Test(idp_t idp);
 }
 
 static constexpr idm_t MASTER = 0;
@@ -23,6 +24,11 @@ idp_t TestIdp()
     return domain->GetActiveResourceIdp();
 }
 
+idp_t Test(idp_t idp)
+{
+    return idp;
+}
+
 void Main(int argc, char *argv[])
 {
     auto domain = cor::GetDomain();
@@ -32,12 +38,6 @@ void Main(int argc, char *argv[])
 
     auto comm_idp = domain->GetPredecessorIdp(agent_idp);
     auto comm = domain->GetLocalResource<cor::Communicator>(comm_idp);
-
-    {
-        cor::Message msg;
-        msg.Add<idp_t>(domain->Idp());
-        agent->Send(comm->GetParent(), msg);
-    }
 
     {
         auto msg = agent->Receive(comm->GetParent());

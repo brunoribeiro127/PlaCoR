@@ -81,6 +81,11 @@ public:
     void SendGlobalResourceFound(idp_t idp, std::string const& ctrl);
     void GlobalResourceFound(idp_t idp);
 
+    void FindPredecessor(idp_t idp);
+    void HandleFindPredecessor(idp_t idp, std::string ctrl);
+    void SendPredecessorFound(idp_t idp, idp_t pred, std::string const& ctrl);
+    void PredecessorFound(idp_t idp, idp_t pred);
+
     void ReleaseReplica(idp_t idp, std::string requester);
     void CheckReplica(idp_t idp, unsigned int size, std::string requester);
 
@@ -115,6 +120,8 @@ public:
     ResourceManager& operator=(ResourceManager&&) = delete;
 
 protected:
+    idp_t ResolveIdp(idp_t idp);
+
     // interface to ConsistencyObject
     void DeallocateResource(idp_t idp);
 
@@ -149,8 +156,12 @@ private:
 
     std::map<idp_t, ConsistencyObject*> _cst_objs;
     std::map<idp_t, idp_t> _predecessors;
+    std::map<idp_t, idp_t> _alias;
+
+    std::map<idp_t, idp_t> _cache_preds;
 
     std::map<idp_t, std::condition_variable> _sync_gfind;
+    std::map<idp_t, std::condition_variable> _sync_pred;
     std::map<idp_t, std::condition_variable> _sync_replicas;
     std::map<idp_t, std::condition_variable> _sync_free;
 

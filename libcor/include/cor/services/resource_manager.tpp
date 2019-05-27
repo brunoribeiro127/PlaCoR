@@ -75,6 +75,8 @@ void ResourceManager::AllocateResource(idp_t idp, idp_t ctx, std::string const& 
 template <typename T>
 ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ctx, std::string const& name, std::string const& ctrl)
 {
+    auto alias = GenerateIdp();
+
     // create replica
     CreateReplica<T>(idp, ctrl);
 
@@ -84,7 +86,7 @@ ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ctx, std::strin
     // attach resource to the context
     auto org = dynamic_cast<DynamicOrganizer*>(ctx_rsc);
     if (org != nullptr)
-        org->Join(idp, name);
+        org->Join(alias, name);
     else
         throw std::runtime_error("Resource " + std::to_string(ctx) + " does not have an organizer!");
 
@@ -92,11 +94,12 @@ ResourcePtr<T> ResourceManager::CreateReference(idp_t idp, idp_t ctx, std::strin
         // lock to access resource manager variables
         std::lock_guard<std::mutex> lk(_mtx);
 
-        // insert relationship of ancestry
-        _predecessors.emplace(idp, ctx);
+        // insert relationship of ancestry and alias
+        _predecessors.emplace(alias, ctx);
+        _alias.emplace(alias, idp);
     }
 
-    return GetLocalResource<T>(idp);
+    return GetLocalResource<T>(alias);
 }
 
 template <typename T, typename ... Args>
@@ -104,15 +107,17 @@ ResourcePtr<T> ResourceManager::CreateCollective(idm_t rank, idp_t comm, idp_t c
 {
     ResourcePtr<T> rsc_ptr;
 
+    auto comm_ori_idp = ResolveIdp(comm);
+
     if (rank == 0) {
         rsc_ptr = CreateLocal<T>(ctx, name, ctrl, std::forward<Args>(args)...);
-        SendStaticGroupCCIdp(comm, rsc_ptr->Idp());
+        SendStaticGroupCCIdp(comm_ori_idp, rsc_ptr->Idp());
     } else {
-        auto idp = GetStaticGroupCCIdp(comm);
+        auto idp = GetStaticGroupCCIdp(comm_ori_idp);
         rsc_ptr = CreateReference<T>(idp, ctx, name, ctrl);
     }
 
-    SynchronizeStaticGroup(comm);
+    SynchronizeStaticGroup(comm_ori_idp);
 
     return rsc_ptr;
 }
@@ -131,6 +136,8 @@ void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
     FindGlobalResource(idp);
 
     _sync_gfind[idp].wait(lk);
+
+    // OBTER O IDP ORIGINAL DO RECURSO
 
     // verifies if the replica of this resource has already been requested
     if (_sync_replicas.find(idp) == _sync_replicas.end()) {
@@ -159,15 +166,8 @@ void ResourceManager::CreateReplica(idp_t idp, std::string const& ctrl)
 template <typename T>
 ResourcePtr<T> ResourceManager::GetLocalResource(idp_t idp)
 {
-    std::unique_lock<std::mutex> lk(_mtx);
-
-    auto cst_obj = _cst_objs.find(idp);
-    if (cst_obj == _cst_objs.end()) {
-        std::cout << "Resource " << idp << " does not exist locally!" << std::endl;
-        throw std::runtime_error("Resource " + std::to_string(idp) + " does not exist locally!");
-    }
-
-    return ResourcePtr<T>{cst_obj->second};
+    auto cst_obj = GetConsistencyObject(idp);
+    return ResourcePtr<T>{idp, cst_obj};
 }
 
 }

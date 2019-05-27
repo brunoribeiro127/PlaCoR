@@ -103,7 +103,7 @@ void ResourceManager::InsertResourceReplica(idp_t idp, Resource *rsc)
 bool ResourceManager::ContainsResource(idp_t idp)
 {
     std::unique_lock<std::mutex> lk(_mtx);
-    return (_cst_objs.find(idp) != _cst_objs.end());
+    return (_predecessors.find(idp) != _predecessors.end());
 }
 
 Resource *ResourceManager::GetResource(idp_t idp)
@@ -116,8 +116,15 @@ ConsistencyObject *ResourceManager::GetConsistencyObject(idp_t idp)
 {
     std::lock_guard<std::mutex> lk(_mtx);
 
+    auto alias_it = _alias.find(idp);
+    auto ori_idp = (alias_it == _alias.end()) ? idp : alias_it->second;
+
+    auto cst_obj_it = _cst_objs.find(ori_idp);
+    if (cst_obj_it == _cst_objs.end())
+        throw std::runtime_error("Resource " + std::to_string(idp) + " does not exist locally!");
+
     // return consistency object of resource idp
-    return _cst_objs.at(idp);
+    return cst_obj_it->second;
 }
 
 unsigned int ResourceManager::GetTotalDomains()
@@ -145,9 +152,40 @@ idp_t ResourceManager::GetDomainIdp(idp_t idp)
 
 idp_t ResourceManager::GetPredecessorIdp(idp_t idp)
 {
+    idp_t pred;
+
+    {
+        // lock to access resource manager variables
+        std::unique_lock<std::mutex> lk(_mtx); // shared_lock
+        
+        auto it = _predecessors.find(idp);
+        if (it != _predecessors.end()) {
+            pred = it->second;
+        } else {
+            auto it = _cache_preds.find(idp);
+            if (it != _cache_preds.end()) {
+                pred = it->second;
+            } else {
+                FindPredecessor(idp);
+                _sync_pred[idp].wait(lk);
+                pred = _cache_preds[idp];
+            }
+        }
+    }
+
+    return pred;
+}
+
+idp_t ResourceManager::ResolveIdp(idp_t idp)
+{
     // lock to access resource manager variables
-    std::unique_lock<std::mutex> lk(_mtx); // shared_lock
-    return _predecessors.at(idp);
+    std::unique_lock<std::mutex> lk(_mtx); //shared_lock
+
+    auto it = _alias.find(idp);
+    if (it == _alias.end())
+        return idp;
+    else
+        return it->second;
 }
 
 void ResourceManager::EraseResource(idp_t idp)
@@ -192,6 +230,34 @@ void ResourceManager::GlobalResourceFound(idp_t idp)
 
     if (_sync_gfind.find(idp) != _sync_gfind.end())
         _sync_gfind[idp].notify_all();
+}
+
+void ResourceManager::FindPredecessor(idp_t idp)
+{
+    _ctrl->SendFindPredecessorRequest(idp);
+}
+
+void ResourceManager::HandleFindPredecessor(idp_t idp, std::string ctrl)
+{
+    std::unique_lock<std::mutex> lk(_mtx); // shared_lock
+
+    // if resource exists, then send find resource reply
+    auto it = _predecessors.find(idp);
+    if (it != _predecessors.end())
+        SendPredecessorFound(idp, it->second, ctrl);
+}
+
+void ResourceManager::SendPredecessorFound(idp_t idp, idp_t pred, std::string const& ctrl)
+{
+    _ctrl->SendFindPredecessorReply(idp, pred, ctrl);
+}
+
+void ResourceManager::PredecessorFound(idp_t idp, idp_t pred)
+{
+    // lock to access resource manager variables
+    std::unique_lock<std::mutex> lk(_mtx);
+    _cache_preds.emplace(idp, pred);
+    _sync_pred[idp].notify_all();
 }
 
 void ResourceManager::DeallocateResource(idp_t idp)

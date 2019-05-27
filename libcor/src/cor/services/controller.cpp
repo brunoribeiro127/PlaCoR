@@ -287,6 +287,14 @@ void Controller::HandleRegularMessage()
             HandleFindResourceReply();
             break;
 
+        case MsgType::FindPredecessorRequest:
+            HandleFindPredecessorRequest();
+            break;
+
+        case MsgType::FindPredecessorReply:
+            HandleFindPredecessorReply();
+            break;
+
         case MsgType::CreateReplica:
             HandleCreateReplica();
             break;
@@ -632,6 +640,81 @@ void Controller::HandleFindResourceReply()
     }
 
     std::thread t(&ResourceManager::GlobalResourceFound, _rsc_mgr, idp);
+    t.detach();
+}
+
+void Controller::SendFindPredecessorRequest(idp_t idp)
+{
+    ScatterMessage req;
+    GroupList dest;
+    
+    // serialize idp
+    std::ostringstream oss(std::stringstream::binary);
+    cereal::PortableBinaryOutputArchive oarchive(oss);
+    oarchive(idp);
+    std::string const& tmp = oss.str();
+
+    // build message
+    req.set_safe();
+    req.set_type(underlying_cast(MsgType::FindPredecessorRequest));
+    req.set_self_discard();
+    req.add(tmp.c_str(), tmp.size());
+    dest.add(_app_group);
+
+    // send message
+    _mbox->send(req, dest);
+}
+
+void Controller::HandleFindPredecessorRequest()
+{
+    idp_t idp;
+    auto ctrl = _smsg.sender();
+
+    {
+        std::string sobj(_msg.begin(), _msg.size());
+        std::istringstream iss(sobj, std::istringstream::binary);
+        cereal::PortableBinaryInputArchive iarchive(iss);
+        iarchive(idp);
+    }
+
+    // check if the resource exists
+    std::thread t(&ResourceManager::HandleFindPredecessor, _rsc_mgr, idp, ctrl);
+    t.detach();
+}
+
+void Controller::SendFindPredecessorReply(idp_t idp, idp_t pred, std::string const& ctrl)
+{
+    ScatterMessage rep;
+    GroupList dest;
+
+    // serialize idp and resource
+    std::ostringstream oss(std::stringstream::binary);
+    cereal::PortableBinaryOutputArchive oarchive(oss);
+    oarchive(idp, pred);
+    const std::string& tmp = oss.str();
+
+    // build message
+    rep.set_safe();
+    rep.set_type(underlying_cast(MsgType::FindPredecessorReply));
+    rep.add(tmp.c_str(), tmp.size());
+    dest.add(ctrl);
+
+    // send message
+    _mbox->send(rep, dest);
+}
+
+void Controller::HandleFindPredecessorReply()
+{
+    idp_t idp, pred;
+
+    {
+        std::string sobj(_msg.begin(), _msg.size());
+        std::istringstream iss(sobj, std::istringstream::binary);
+        cereal::PortableBinaryInputArchive iarchive(iss);
+        iarchive(idp, pred);
+    }
+
+    std::thread t(&ResourceManager::PredecessorFound, _rsc_mgr, idp, pred);
     t.detach();
 }
 

@@ -26,9 +26,9 @@ int main(int argc, char *argv[])
     auto domain = cor::Initialize(app_group, context, npods, module);
 
     {
-        auto comm = domain->CreateCollective<cor::Communicator>(domain->Idp(), "", npods, total_members, parent);
+        auto clos = domain->CreateCollective<cor::Closure>(domain.Idp(), "", npods, total_members, parent);
 
-        auto agent = domain->CreateLocal<cor::Agent<void(int,char**)>>(comm->Idp(), "", module, "Main");
+        auto agent = domain->CreateLocal<cor::Agent<void(int,char**)>>(clos.Idp(), "", domain->GetModuleName(), "Main");
         agent->Run(argc, argv);
         agent->Wait();
         agent->Get();

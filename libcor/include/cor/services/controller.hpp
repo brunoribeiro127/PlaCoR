@@ -124,6 +124,11 @@ protected:
     void SendFindResourceReply(idp_t idp, std::string const& ctrl);
     void HandleFindResourceReply();
 
+    void SendFindPredecessorRequest(idp_t idp);
+    void HandleFindPredecessorRequest();
+    void SendFindPredecessorReply(idp_t idp, idp_t pred, std::string const& ctrl);
+    void HandleFindPredecessorReply();
+
     void SendReplica(idp_t idp, Resource *rsc, std::string const& ctrl);
     void HandleCreateReplica();
 
@@ -195,6 +200,9 @@ private:
 
         FindResourceRequest,
         FindResourceReply,
+
+        FindPredecessorRequest,
+        FindPredecessorReply,
 
         CreateReplica,
 

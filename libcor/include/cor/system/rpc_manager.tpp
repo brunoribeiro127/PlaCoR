@@ -21,13 +21,13 @@ idp_t RpcManager::Create(idp_t ctx, std::string const& name, std::string const& 
 template <typename T, typename ... Args>
 void RpcManager::Run(idp_t idp, std::string const& ctrl, Args&&... args)
 {
-    static_assert(RunTraits<T>::valid, "ERROR");
+    static_assert(RunTraits<Executor<T>>::valid, "ERROR");
 
-    if constexpr (RunTraits<T>::valid)
-        (*_con).template call<typename RunTraits<T>::func_type>(
+    if constexpr (RunTraits<Executor<T>>::valid)
+        (*_con).template call<typename RunTraits<Executor<T>>::func_type>(
             *(*_con).transport,
             ctrl,
-            (uint32_t) RunTraits<T>::rpcid,
+            (uint32_t) RunTraits<Executor<T>>::rpcid,
             idp, std::forward<Args>(args)...
         ).ft().get().get();
 }
@@ -35,27 +35,27 @@ void RpcManager::Run(idp_t idp, std::string const& ctrl, Args&&... args)
 template <typename T>
 void RpcManager::Wait(idp_t idp, std::string const& ctrl)
 {
-    static_assert(WaitTraits<T>::valid, "ERROR");
+    static_assert(WaitTraits<Executor<T>>::valid, "ERROR");
 
-    if constexpr (WaitTraits<T>::valid)
-        (*_con).template call<typename WaitTraits<T>::func_type>(
+    if constexpr (WaitTraits<Executor<T>>::valid)
+        (*_con).template call<typename WaitTraits<Executor<T>>::func_type>(
             *(*_con).transport,
             ctrl,
-            (uint32_t) WaitTraits<T>::rpcid,
+            (uint32_t) WaitTraits<Executor<T>>::rpcid,
             idp
         ).ft().get().get();
 }
 
-template <typename T, typename R>
-R RpcManager::Get(idp_t idp, std::string const& ctrl)
+template <typename T>
+auto RpcManager::Get(idp_t idp, std::string const& ctrl)
 {
-    static_assert(GetTraits<T>::valid, "ERROR");
+    static_assert(GetTraits<Executor<T>>::valid, "ERROR");
 
-    if constexpr (GetTraits<T>::valid)
-        return (*_con).template call<typename GetTraits<T>::func_type>(
+    if constexpr (GetTraits<Executor<T>>::valid)
+        return (*_con).template call<typename GetTraits<Executor<T>>::func_type>(
             *(*_con).transport,
             ctrl,
-            (uint32_t) GetTraits<T>::rpcid,
+            (uint32_t) GetTraits<Executor<T>>::rpcid,
             idp
         ).ft().get().get();
 }
