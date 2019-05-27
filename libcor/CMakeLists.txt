@@ -31,15 +31,4 @@ install(
         DESTINATION lib
 )
 
-install(
-    DIRECTORY
-        "include/cor"
-    DESTINATION
-        include
-    FILES_MATCHING
-        PATTERN "*.hpp"
-        PATTERN "*.tpp"
-        PATTERN "*.h"
-)
-
 add_subdirectory(src)

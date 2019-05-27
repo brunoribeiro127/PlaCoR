@@ -33,3 +33,25 @@ add_subdirectory(tools)
 add_subdirectory(units)
 add_subdirectory(examples)
 add_subdirectory(tests)
+
+install(
+    DIRECTORY
+        "libcor/include/cor"
+    DESTINATION
+        "include"
+    FILES_MATCHING
+        PATTERN "*.hpp"
+        PATTERN "*.tpp"
+        PATTERN "*.h"
+)
+
+install(
+    DIRECTORY
+        "units"
+    DESTINATION
+        "include/cor"
+    FILES_MATCHING
+        PATTERN "*.hpp"
+        PATTERN "*.tpp"
+        PATTERN "*.h"
+)

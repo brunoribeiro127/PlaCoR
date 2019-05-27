@@ -18,12 +18,3 @@ install(
     LIBRARY
         DESTINATION lib
 )
-
-install(
-    DIRECTORY
-        "include/cor"
-    DESTINATION
-        modules
-    FILES_MATCHING
-        PATTERN "*.hpp"
-)
