@@ -98,7 +98,7 @@ void Main(int argc, char *argv[])
     std::size_t res, beg, end;
     res = 0; beg = 0; end = 10;
 
-    AgentRange<cor::Communicator>(beg, end);
+    AgentRange<cor::Closure>(beg, end);
 
     for(auto i = beg; i < end ; ++i) {
         pool->Dispatch(readFiles, &i);
@@ -106,8 +106,8 @@ void Main(int argc, char *argv[])
         res = std::accumulate(vec.begin(), vec.end(), res);
     }
 
-    auto rank = GetRank<cor::Communicator>(agent_idp);
-    auto comm_size = GetSize<cor::Communicator>(comm_idp);
+    auto rank = GetRank<cor::Closure>(agent_idp);
+    auto comm_size = GetSize<cor::Closure>(comm_idp);
 
     auto data = domain->CreateCollective<cor::Data<std::vector<int>>>(comm_idp, domain->Idp(), "data", comm_size);
     auto barrier = domain->CreateCollective<cor::Barrier>(comm_idp, domain->Idp(), "barrier", comm_idp);

@@ -1,4 +1,3 @@
-#[[
 # test pool
 add_library(test_pool SHARED test_pool.cpp)
 target_compile_features(test_pool PUBLIC cxx_std_17)
@@ -93,7 +92,7 @@ target_link_libraries(
         Spread
         SSRCSpread
         Cereal
-))
+)
 
 # dummy
 add_library(dummy SHARED dummy.cpp)
@@ -120,15 +119,15 @@ target_include_directories(
         $<INSTALL_INTERFACE:include>
 )
 
-# test_comm
-add_library(test_comm SHARED test_comm.cpp)
-target_compile_features(test_comm PUBLIC cxx_std_17)
-set_target_properties(test_comm PROPERTIES CXX_EXTENSIONS OFF)
-set_target_properties(test_comm PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(test_comm PROPERTIES COMPILE_FLAGS -O2)
-set_target_properties(test_comm PROPERTIES PREFIX "lib" SUFFIX ".so")
+# test_clos
+add_library(test_clos SHARED test_clos.cpp)
+target_compile_features(test_clos PUBLIC cxx_std_17)
+set_target_properties(test_clos PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(test_clos PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(test_clos PROPERTIES COMPILE_FLAGS -O2)
+set_target_properties(test_clos PROPERTIES PREFIX "lib" SUFFIX ".so")
 target_link_libraries(
-    test_comm
+    test_clos
     PRIVATE
         libcor
         pool
@@ -137,7 +136,7 @@ target_link_libraries(
         Cereal
 )
 target_include_directories(
-    test_comm
+    test_clos
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
@@ -211,7 +210,7 @@ target_include_directories(
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
 )
-]]
+
 # test_spawn
 add_library(test_spawn SHARED test_spawn.cpp)
 target_compile_features(test_spawn PUBLIC cxx_std_17)
@@ -283,18 +282,16 @@ target_include_directories(
 
 install(
     TARGETS
-#[[
         test_pool
         test_root
         vecsum
         vecsum_spawn
         test
         dummy
-        test_comm
+        test_clos
         test_client
         test_server
         test_alias
-]]
         test_spawn
         client_rpc
         server_rpc

@@ -1,11 +1,6 @@
 #include <iostream>
 
 #include "cor/cor.hpp"
-#include "cor/resources/agent.hpp"
-#include "cor/resources/domain.hpp"
-#include "cor/resources/data.hpp"
-#include "cor/resources/communicator.hpp"
-#include "cor/message.hpp"
 
 extern "C"
 {
@@ -37,16 +32,16 @@ void Main(int argc, char *argv[])
 
         data = domain->CreateLocal<Vector<int>>(domain->Idp(), "data", std::ref(array));
 
-        auto comm_idp = domain->Spawn("test", NUM_AGENTS, "$HOME/placor/examples/libvecsum_spawn.dylib", {}, { "localhost" });
+        auto clos_idp = domain->Spawn("test", NUM_AGENTS, "$HOME/placor/examples/libvecsum_spawn.dylib", {}, { "localhost" });
 
-        auto comm = domain->CreateReference<cor::Communicator>(comm_idp, domain->Idp(), "comm");
+        auto clos = domain->CreateReference<cor::Closure>(clos_idp, domain->Idp(), "clos");
 
         cor::Message smsg;
         smsg.SetType(0);
         smsg.Add<idp_t>(data->Idp());
 
         for (int i = 0; i < NUM_AGENTS; ++i)
-            agent->Send(comm->GetIdp(i), smsg);
+            agent->Send(clos->GetIdp(i), smsg);
 
         std::size_t acc = 0;
 
@@ -60,9 +55,9 @@ void Main(int argc, char *argv[])
 
     } else {
 
-        auto comm_idp = domain->GetPredecessorIdp(agent_idp);
-        auto comm = domain->GetLocalResource<cor::Communicator>(comm_idp);
-        auto rank = comm->GetIdm(agent_idp);
+        auto clos_idp = domain->GetPredecessorIdp(agent_idp);
+        auto clos = domain->GetLocalResource<cor::Closure>(clos_idp);
+        auto rank = clos->GetIdm(agent_idp);
 
         auto rmsg = agent->Receive();
         auto data_idp = rmsg.Get<idp_t>();
@@ -82,7 +77,7 @@ void Main(int argc, char *argv[])
         cor::Message smsg;
         smsg.SetType(1);
         smsg.Add<std::size_t>(acc);
-        agent->Send(comm->GetParent(), smsg);
+        agent->Send(clos->GetParent(), smsg);
 
     }
 }

@@ -85,11 +85,11 @@ void Main(int argc, char *argv[])
     Timer t;
 
     auto pool = new cor::Pool(pool_size);
-    auto rank = GetRank<cor::Communicator>();
+    auto rank = GetRank<cor::Closure>();
 
     std::size_t begin = 0;
     std::size_t end = 10;
-    AgentRange<cor::Communicator>(begin, end);
+    AgentRange<cor::Closure>(begin, end);
 /*
     if (rank == MASTER)
         t.Start();

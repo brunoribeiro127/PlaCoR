@@ -24,10 +24,10 @@ void Main(int argc, char *argv[])
     auto agent = domain->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
 
     // get agent rank
-    auto comm_idp = domain->GetPredecessorIdp(agent_idp);
-    auto comm = domain->GetLocalResource<cor::Communicator>(comm_idp);
-    auto comm_size = comm->GetTotalMembers();
-    auto rank = comm->GetIdm(agent_idp);
+    auto clos_idp = domain->GetPredecessorIdp(agent_idp);
+    auto clos = domain->GetLocalResource<cor::Closure>(clos_idp);
+    auto clos_size = clos->GetTotalMembers();
+    auto rank = clos->GetIdm(agent_idp);
 
     cor::ResourcePtr<Vector<int>> data;
 
@@ -43,8 +43,8 @@ void Main(int argc, char *argv[])
         msg.SetType(0);
         msg.Add<idp_t>(data->Idp());
 
-        for (int i = 1; i < comm_size; ++i)
-            agent->Send(comm->GetIdp(i), msg);
+        for (int i = 1; i < clos_size; ++i)
+            agent->Send(clos->GetIdp(i), msg);
 
     } else {
 
@@ -59,13 +59,13 @@ void Main(int argc, char *argv[])
     data->AcquireRead();
     auto array = data->Get();
 
-    for (int i = rank * (ARRAY_SIZE/comm_size); i < ((rank + 1) * (ARRAY_SIZE/comm_size)); ++i)
+    for (int i = rank * (ARRAY_SIZE/clos_size); i < ((rank + 1) * (ARRAY_SIZE/clos_size)); ++i)
         acc += (*array)[i];
 
     data->ReleaseRead();
 
     if (rank == MASTER) {
-        for (int i = 1; i < comm_size; ++i) {
+        for (int i = 1; i < clos_size; ++i) {
             auto msg = agent->Receive();
             auto res = msg.Get<std::size_t>();
             acc += res;
@@ -75,6 +75,6 @@ void Main(int argc, char *argv[])
         cor::Message msg;
         msg.SetType(1);
         msg.Add<std::size_t>(acc);
-        agent->Send(comm->GetIdp(0), msg);
+        agent->Send(clos->GetIdp(0), msg);
     }
 }

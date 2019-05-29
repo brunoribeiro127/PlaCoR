@@ -36,10 +36,10 @@ void Main(int argc, char *argv[])
     auto agent_idp = domain->GetActiveResourceIdp();
     auto agent = domain->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
 
-    auto comm_idp = domain->GetPredecessorIdp(agent_idp);
-    auto comm = domain->GetLocalResource<cor::Communicator>(comm_idp);
+    auto clos_idp = domain->GetPredecessorIdp(agent_idp);
+    auto clos = domain->GetLocalResource<cor::Closure>(clos_idp);
 
     {
-        auto msg = agent->Receive(comm->GetParent());
+        auto msg = agent->Receive(clos->GetParent());
     }
 }

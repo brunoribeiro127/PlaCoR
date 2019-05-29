@@ -16,9 +16,9 @@ void Main(int argc, char *argv[])
     auto agent_idp = domain->GetActiveResourceIdp();
     auto agent = domain->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
 
-    auto remote_comm_idp = domain->Spawn("server", 1, "~/placor/tests/libtest_server.so", {}, { "localhost" });
-    auto remote_comm = domain->CreateReference<cor::Communicator>(remote_comm_idp, domain->Idp(), "REMOTE COMMUNICATOR");
-    auto remote_domain_idp = domain->GetPredecessorIdp(remote_comm_idp);
+    auto remote_clos_idp = domain->Spawn("server", 1, "~/placor/tests/libtest_server.so", {}, { "localhost" });
+    auto remote_clos = domain->CreateReference<cor::Closure>(remote_clos_idp, domain->Idp(), "REMOTE CLOSURE");
+    auto remote_domain_idp = domain->GetPredecessorIdp(remote_clos_idp);
 
     {
         std::vector<idp_t> _remote_agents;
@@ -44,6 +44,6 @@ void Main(int argc, char *argv[])
 
     {
         cor::Message msg;
-        agent->Send(0, remote_comm_idp, msg);
+        agent->Send(0, remote_clos_idp, msg);
     }
 }
