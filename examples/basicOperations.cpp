@@ -17,7 +17,7 @@ void Main(int argc, char *argv[])
     auto agent = domain->GetLocalResource<cor::Agent<void(int,char**)>>(agent_idp);
 
     // criar um grupo para introduzir um novo módulo do utilizador na aplicação
-    auto group = domain->CreateLocal<cor::Group>(domain->Idp(), "group", "~/placor/examples/libex3.dylib");
+    auto group = domain->CreateLocal<cor::Group>(domain->Idp(), "group", "~/placor/examples/libcallableModule.so");
 
     // criar um dado no qual irá ser escrito o idp do agente que irá ser criado
     auto data = domain->CreateLocal<cor::Data<idp_t>>(group->Idp(), "data");

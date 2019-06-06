@@ -1,3 +1,4 @@
+#[[
 # test pool
 add_library(test_pool SHARED test_pool.cpp)
 target_compile_features(test_pool PUBLIC cxx_std_17)
@@ -298,3 +299,4 @@ install(
     LIBRARY
         DESTINATION tests
 )
+]]

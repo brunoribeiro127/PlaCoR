@@ -1,5 +1,5 @@
-#ifndef MODULES_POOL_HPP
-#define MODULES_POOL_HPP
+#ifndef UNITS_POOL_HPP
+#define UNITS_POOL_HPP
 
 #include "cor/cor.hpp"
 

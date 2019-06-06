@@ -23,27 +23,31 @@ CZRPC_ALLOW_RVALUE_REFS;
 #define GET(...) REGISTERRPC(__VA_ARGS__)
 
 #define RPCTABLE_CLASS cor::RPC
-#define RPCTABLE_CONTENTS                                                                                           \
-    CREATE(Group, group, Create<cor::Group, std::string const&>)                                                    \
-    CREATE(Data<std::vector<int>>, data, Create<cor::Data<std::vector<int>>, std::vector<int>>)                     \
-    CREATE(Agent<void()>, agent, Create<cor::Agent<void()>, std::string const&, std::string const&>)                \
-    CREATE(Agent<idp_t()>, agent1, Create<cor::Agent<idp_t()>, std::string const&, std::string const&>)             \
-    CREATE(Agent<void(idp_t)>, agent2, Create<cor::Agent<void(idp_t)>, std::string const&, std::string const&>)     \
-    CREATE(Agent<idp_t(idp_t)>, agent3, Create<cor::Agent<idp_t(idp_t)>, std::string const&, std::string const&>)   \
-                                                                                                                    \
-    RUN(Executor<void()>, run, Run<void()>)                                                                         \
-    RUN(Executor<idp_t()>, run1, Run<idp_t()>)                                                                      \
-    RUN(Executor<void(idp_t)>, run2, Run<void(idp_t), idp_t>)                                                       \
-    RUN(Executor<idp_t(idp_t)>, run3, Run<idp_t(idp_t), idp_t>)                                                     \
-                                                                                                                    \
-    WAIT(Executor<void()>, wait, Wait<void()>)                                                                      \
-    WAIT(Executor<idp_t()>, wait1, Wait<idp_t()>)                                                                   \
-    WAIT(Executor<void(idp_t)>, wait2, Wait<void(idp_t)>)                                                           \
-    WAIT(Executor<idp_t(idp_t)>, wait3, Wait<idp_t(idp_t)>)                                                         \
-                                                                                                                    \
-    GET(Executor<void()>, get, Get<void, void()>)                                                                   \
-    GET(Executor<idp_t()>, get1, Get<idp_t, idp_t()>)                                                               \
-    GET(Executor<void(idp_t)>, get2, Get<void, void(idp_t)>)                                                        \
+#define RPCTABLE_CONTENTS                                                                                                           \
+    CREATE(Group, group, Create<cor::Group, std::string const&>)                                                                    \
+    CREATE(Data<std::vector<int>>, data, Create<cor::Data<std::vector<int>>, std::vector<int>>)                                     \
+    CREATE(Agent<void()>, agent, Create<cor::Agent<void()>, std::string const&, std::string const&>)                                \
+    CREATE(Agent<idp_t()>, agent1, Create<cor::Agent<idp_t()>, std::string const&, std::string const&>)                             \
+    CREATE(Agent<void(idp_t)>, agent2, Create<cor::Agent<void(idp_t)>, std::string const&, std::string const&>)                     \
+    CREATE(Agent<idp_t(idp_t)>, agent3, Create<cor::Agent<idp_t(idp_t)>, std::string const&, std::string const&>)                   \
+    CREATE(ProtoAgent<void()>, protoagent, Create<cor::ProtoAgent<void()>, std::string const&, std::string const&>)                 \
+    CREATE(ProtoAgent<idp_t()>, protoagent1, Create<cor::ProtoAgent<idp_t()>, std::string const&, std::string const&>)              \
+    CREATE(ProtoAgent<void(idp_t)>, protoagent2, Create<cor::ProtoAgent<void(idp_t)>, std::string const&, std::string const&>)      \
+    CREATE(ProtoAgent<idp_t(idp_t)>, protoagent3, Create<cor::ProtoAgent<idp_t(idp_t)>, std::string const&, std::string const&>)    \
+                                                                                                                                    \
+    RUN(Executor<void()>, run, Run<void()>)                                                                                         \
+    RUN(Executor<idp_t()>, run1, Run<idp_t()>)                                                                                      \
+    RUN(Executor<void(idp_t)>, run2, Run<void(idp_t), idp_t>)                                                                       \
+    RUN(Executor<idp_t(idp_t)>, run3, Run<idp_t(idp_t), idp_t>)                                                                     \
+                                                                                                                                    \
+    WAIT(Executor<void()>, wait, Wait<void()>)                                                                                      \
+    WAIT(Executor<idp_t()>, wait1, Wait<idp_t()>)                                                                                   \
+    WAIT(Executor<void(idp_t)>, wait2, Wait<void(idp_t)>)                                                                           \
+    WAIT(Executor<idp_t(idp_t)>, wait3, Wait<idp_t(idp_t)>)                                                                         \
+                                                                                                                                    \
+    GET(Executor<void()>, get, Get<void, void()>)                                                                                   \
+    GET(Executor<idp_t()>, get1, Get<idp_t, idp_t()>)                                                                               \
+    GET(Executor<void(idp_t)>, get2, Get<void, void(idp_t)>)                                                                        \
     GET(Executor<idp_t(idp_t)>, get3, Get<idp_t, idp_t(idp_t)>)
 
 #include "cor/external/crazygaze/rpc/RPCGenerate.h"

@@ -1,6 +1,5 @@
 #include "cor/cor.hpp"
 #include "units/pool.hpp"
-#include "units/timer.hpp"
 #include "units/utils.hpp"
 
 // System include(s):
@@ -22,8 +21,6 @@ static constexpr idm_t MASTER = 0;
  
 void ReadFiles(void *)
 {
-    Timer t;
-
     // Set up the TChain for reading all the files:
     TChain chain("CollectionTree");
     for(Int_t i = 0; i < 10; ++i) {
@@ -82,7 +79,7 @@ void Main(int argc, char *argv[])
     // Enable thread correctness for ROOT:
     ROOT::EnableThreadSafety();
 
-    Timer t;
+    //Timer t;
 
     auto pool = new cor::Pool(pool_size);
     auto rank = GetRank<cor::Closure>();
